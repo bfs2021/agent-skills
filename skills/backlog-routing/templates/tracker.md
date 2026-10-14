@@ -33,7 +33,7 @@ localCheck: the local check the human still has to run, or null. needsYou: short
 **Milestone:** {link} · **Base:** `{base}` · **Last updated:** {timestamp}
 
 ## Review queue
-<!-- Green PRs with no unanswered verified findings, oldest first. -->
+<!-- Green PRs with no unanswered verified findings that wait on the human to merge, oldest first. -->
 | PR | Batch | What changed | Proof | Local check before merge |
 |---|---|---|---|---|
 

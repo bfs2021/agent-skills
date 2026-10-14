@@ -39,7 +39,8 @@ first checks out the existing branch instead of creating it. -->
 7. Drive CI to green. Answer every review thread: fix it, or explain why not.
 
 ## Never
-- Merge, approve, or enable auto-merge.
+- Merge, approve, or enable auto-merge. Merging belongs to {who merges, per the adapter's merge
+  policy}, after the review gate.
 - Push to or target {off-limits branches}.
 - Skip, disable, or loosen a test to get green.
 - Wait on CI with a notification-wait tool. Poll in a blocking loop, or end the turn.
