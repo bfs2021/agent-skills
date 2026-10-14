@@ -1,14 +1,15 @@
 ---
 name: backlog-routing
 description: >
-  A milestone-driven system for working a GitHub backlog with several agents at once while a human
-  stays the only merge gate. Seven stages, each run only when asked: intake (turn playtest notes,
-  screenshots, or findings into labeled issues), shape (propose a milestone's contents and ordered
-  plan), plan (split the milestone into collision-free batches, route each through the `route`
+  A milestone-driven system for working a GitHub backlog with several agents at once while merge
+  authority stays where the repo's adapter puts it (the human, by default). Seven stages, each run
+  only when asked: intake (turn playtest notes, screenshots, or findings into labeled issues),
+  shape (propose a milestone's contents and ordered plan), plan (split the milestone into
+  collision-free batches, route each through the `route`
   skill to the cheapest capable seat, and pick cloud or local), dispatch (start the batches:
   paste-ready briefs for tools that can't be launched from the orchestrator, local agent sessions,
   or cloud agent sessions driven by a goal condition), review gate
-  (two-model review before the PR reaches the human), close-out (after each merge), and release
+  (two-model review before a PR is ready to merge), close-out (after each merge), and release
   (when the milestone empties). Repo-specific rules come from an adapter skill. Trigger on:
   "backlog routing", "route the backlog", "plan the milestone", "batch the milestone", "dispatch
   the batches", "intake these findings", "file issues from my playtest notes", "shape vX.Y",
@@ -18,8 +19,8 @@ description: >
 # Backlog routing
 
 The job is throughput without losing control. Lots of agents, each on the cheapest model that can
-actually do its piece, none of them stepping on each other, and nothing merged until the human
-reads the PR.
+actually do its piece, none of them stepping on each other, and nothing merged unless the repo's
+merge policy allows it. By default that means the human reads every PR first.
 
 It's built from skills that already exist. This one decides **what runs where, in what order, on
 which model**. The rest is delegated:
@@ -53,6 +54,11 @@ The adapter supplies:
 - **Gate commands** a lane must show passing, and which extra gates trigger on which kinds of change.
 - **Local-only criteria**: what can't be proven in a cloud container (OS-specific visual baselines,
   live API keys that live in the user's browser, a human walking a flow, headful playtests).
+- **Merge policy**: who merges, and what must be shown first. With no policy the default is
+  human-only: no agent merges, approves, or enables auto-merge. An adapter can give merging to the
+  orchestrator for the PRs it names (say, everything except drafts and PRs with a Local check),
+  and lists the conditions to show first (gates, CI, a clean review gate). It also says how long
+  to wait for an automated reviewer.
 - **Milestone and release convention**: how milestones are named, what a release PR contains, which
   release steps belong to the human.
 - **Label names** for type, priority, size, model tier, and the two this skill needs (`needs-local`,
@@ -62,10 +68,14 @@ The adapter supplies:
 
 ## 1. Hard rules (every stage)
 
-- **The human is the only merge gate.** Never merge, never approve, never enable auto-merge. Never
-  push to or open PRs against a branch the adapter marks off limits.
+- **Merge authority comes from the adapter; the default is the human.** With no merge policy,
+  never merge, never approve, never enable auto-merge. With one, merge only the PRs it names, only
+  once a tool result shows every condition it lists, and only from the review gate. Approving and
+  enabling auto-merge count as merging. Lanes never merge. Never push to or open PRs against a
+  branch the adapter marks off limits.
 - **Each stage runs when asked.** Finishing one stage doesn't start the next unless the user said
-  to chain them.
+  to chain them. A merge policy that lets the orchestrator merge is that instruction for
+  close-out: it runs after each merge the orchestrator makes.
 - **Stages that create things are dry-run first.** `intake` and `shape` show what they'd write and
   wait for an OK. `dispatch` shows what it's about to launch.
 - **Claims need proof.** "Green", "merged", "done" point at a tool result (a check run, a gate
@@ -186,25 +196,42 @@ Runs on each batch PR once CI is green on its head.
 1. Two reviewers from different model families where available:
    - the seat `route` picks for the code review phase, which must not be the family that wrote
      the batch
-   - an automated reviewer the repo already runs (Codex review, say)
+   - an automated reviewer the repo already runs (the Codex bot, say)
+
+   When no other-family seat is routed for review, that automated reviewer is the second family
+   on its own, as long as it isn't the family writing the lanes. Its review has to have posted: a
+   missing review means the gate hasn't passed. The adapter says how long to wait. If it never
+   posts, the PR goes to the human.
 
    Security, concurrency, and architectural diffs get the table's escalation seat.
-2. Verify every finding yourself before relaying it. Check the finding's commit against the PR
-   head, since the lane may already have fixed it. Relay only real findings to the batch, which
-   fixes them and pushes.
-3. When the PR is green with no unanswered verified findings, add it to the tracker's **Review
-   queue**:
-   - the link
-   - one line on what changed
-   - what proves it (the check run, gate output)
-   - the **Local check before merge** steps, if any
+2. Verify every finding yourself before relaying it. Check that it still applies at the PR head,
+   since the lane may already have fixed it. Relay only real findings to the batch, which fixes
+   them and pushes. Then clear each thread you've verified, fixed or not real, with
+   `scripts/resolve-thread.sh <thread-id> <sha>`. It replies on the thread pointing at the commit
+   (the fix, or the head you verified against when the finding isn't real) and resolves it. It
+   refuses any thread the Codex bot didn't start or that isn't on an open PR in this repo. A
+   finding stays open until someone does.
+   For the Codex bot, `scripts/pr-ready.sh <pr>` does the mechanical part. It prints at most 6
+   lines (head sha, CI, draft, whether the bot's summary posted, its unresolved findings with
+   thread ids and outdated ones flagged, mergeable state) and exits 0 only when all of them pass.
+3. When the PR is green with no unanswered verified findings, check the merge policy.
+   - **The orchestrator merges.** The policy names this kind of PR. Show each condition it lists
+     with a tool result, merge pinned to the head you checked (`gh pr merge --match-head-commit
+     <sha>`), then run close-out. If the head moved, run the review gate again. A condition you
+     can't show means the human's case below.
+   - **The human merges.** That's the default, and the policy for anything it keeps with them.
+     Add the PR to the tracker's **Review queue** with:
+     - the link
+     - one line on what changed
+     - what proves it (the check run, gate output)
+     - the **Local check before merge** steps, if any
 
-   Set the batch's `pr` and `status` in the state block, and `localCheck` if one is needed. Then
-   tell the user. That queue is the human's inbox.
+     Set the batch's `pr` and `status` in the state block, and `localCheck` if one is needed. Then
+     tell the user. That queue is the human's inbox.
 
 ### close-out
 
-Runs after each merge the human makes.
+Runs after each merge, whoever makes it.
 
 1. `post-merge` for the linked issues: close with a completion comment and tick the acceptance
    criteria.
@@ -226,7 +253,7 @@ the tracker at the end.
 
 1. Open the release-prep PR the adapter describes (release notes entry, version bump) against the
    base branch.
-2. After the human merges it, hand them the adapter's human-only release steps (tag, promoting the
+2. After it merges, hand the human the adapter's human-only release steps (tag, promoting the
    release branch, publishing the release) as text. **Never run them.**
 3. Close the tracker and the milestone. Update epic progress on parents with children in later
    milestones.
