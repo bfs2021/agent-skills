@@ -13,11 +13,12 @@
 #   re-ran), plus commit statuses. No checks reported yet is pending, not a pass or a failure.
 # - Codex summary: the marker comment exists and every row of its table says Completed. The bot
 #   reviews when a PR opens, is marked ready, or is asked to (@codex review), not on every push.
-# - Codex findings: inline threads Codex started that are unresolved and not outdated. Outdated
-#   means GitHub saw the commented lines change, so a pushed fix drops the finding. Matching
-#   original_commit_id to the head instead would drop every finding after the first later push,
-#   fixed or not, because the bot doesn't re-review. To clear a finding that isn't real, resolve
-#   its thread.
+# - Codex findings: every inline thread Codex started that is still unresolved. An outdated one
+#   (a push changed the commented lines) is flagged, not dropped: GitHub marks a thread outdated
+#   whether or not the push fixed it, and the bot doesn't re-review, so a thread only clears when
+#   someone verifies the fix (or that the finding isn't real) and resolves it.
+# - The bot is matched by exact login and the Bot account type, so a lookalike account can't forge
+#   the summary or a finding.
 
 set -u
 set -o pipefail
@@ -42,7 +43,7 @@ name="${repo#*/}"
 
 # gojq (inside gh --jq) prints strings raw; each output line is TAB-separated, with no empty fields.
 pr_jq='
-def codex: (.author.login // "") | startswith("'"$CODEX_LOGIN"'");
+def codex: .author.__typename == "Bot" and .author.login == "'"$CODEX_LOGIN"'";
 .data.repository.pullRequest
 | "head\t\(.headRefOid)",
   "state\t\(.state)",
@@ -55,9 +56,9 @@ def codex: (.author.login // "") | startswith("'"$CODEX_LOGIN"'");
       end ),
   "threads\t\(.reviewThreads.pageInfo.hasNextPage)",
   ( .reviewThreads.nodes[]
-    | select((.isResolved | not) and (.isOutdated | not) and (.comments.nodes[0] | codex))
+    | select((.isResolved | not) and (.comments.nodes[0] | codex))
     | .comments.nodes[0].body as $b
-    | "finding\t\(.path):\(.line // .originalLine)\t\((($b | capture("!\\[(?<p>P[0-9]+) Badge\\]") | .p) // "P?"))\t\($b | split("\n")[0] | gsub("<[^>]*>|!\\[[^\\]]*\\]\\([^)]*\\)|\\*\\*"; "") | gsub("^\\s+|\\s+$"; "") | .[0:'"$FINDING_CHARS"'])" )
+    | "finding\t\(.path):\(.line // .originalLine)\t\((($b | capture("!\\[(?<p>P[0-9]+) Badge\\]") | .p) // "P?"))\t\(if .isOutdated then "(outdated) " else "" end)\($b | split("\n")[0] | gsub("<[^>]*>|!\\[[^\\]]*\\]\\([^)]*\\)|\\*\\*"; "") | gsub("^\\s+|\\s+$"; "") | .[0:'"$FINDING_CHARS"'])" )
 '
 
 pr_query='
@@ -65,12 +66,12 @@ query($owner: String!, $name: String!, $num: Int!) {
   repository(owner: $owner, name: $name) {
     pullRequest(number: $num) {
       state isDraft mergeable mergeStateStatus headRefOid
-      comments(last: 100) { nodes { body author { login } } }
+      comments(last: 100) { nodes { body author { __typename login } } }
       reviewThreads(first: 100) {
         pageInfo { hasNextPage }
         nodes {
           isResolved isOutdated path line originalLine
-          comments(first: 1) { nodes { body author { login } } }
+          comments(first: 1) { nodes { body author { __typename login } } }
         }
       }
     }

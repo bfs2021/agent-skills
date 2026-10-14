@@ -206,14 +206,16 @@ Runs on each batch PR once CI is green on its head.
    Security, concurrency, and architectural diffs get the table's escalation seat.
 2. Verify every finding yourself before relaying it. Check that it still applies at the PR head,
    since the lane may already have fixed it. Relay only real findings to the batch, which fixes
-   them and pushes. For a finding that isn't real, say why on the thread and resolve it.
+   them and pushes. Then resolve each thread you've verified, fixed or not real, with a reply that
+   says which (GraphQL `resolveReviewThread`). A finding stays open until someone does.
    For the Codex bot, `scripts/pr-ready.sh <pr>` does the mechanical part. It prints at most 6
-   lines (head sha, CI, draft, whether the bot's summary posted, its unresolved findings, mergeable
-   state) and exits 0 only when all of them pass.
+   lines (head sha, CI, draft, whether the bot's summary posted, its unresolved findings with
+   outdated ones flagged, mergeable state) and exits 0 only when all of them pass.
 3. When the PR is green with no unanswered verified findings, check the merge policy.
    - **The orchestrator merges.** The policy names this kind of PR. Show each condition it lists
-     with a tool result, merge, then run close-out. A condition you can't show means the human's
-     case below.
+     with a tool result, merge pinned to the head you checked (`gh pr merge --match-head-commit
+     <sha>`), then run close-out. If the head moved, run the review gate again. A condition you
+     can't show means the human's case below.
    - **The human merges.** That's the default, and the policy for anything it keeps with them.
      Add the PR to the tracker's **Review queue** with:
      - the link
