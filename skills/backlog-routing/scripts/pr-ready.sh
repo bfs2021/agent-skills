@@ -16,7 +16,8 @@
 # - Codex findings: every inline thread Codex started that is still unresolved. An outdated one
 #   (a push changed the commented lines) is flagged, not dropped: GitHub marks a thread outdated
 #   whether or not the push fixed it, and the bot doesn't re-review, so a thread only clears when
-#   someone verifies the fix (or that the finding isn't real) and resolves it.
+#   someone verifies the fix (or that the finding isn't real) and resolves it. Each finding
+#   carries its thread id for resolve-thread.sh, which is the narrow way to do that.
 # - The bot is matched by exact login and the Bot account type, so a lookalike account can't forge
 #   the summary or a finding.
 
@@ -58,7 +59,7 @@ def codex: .author.__typename == "Bot" and .author.login == "'"$CODEX_LOGIN"'";
   ( .reviewThreads.nodes[]
     | select((.isResolved | not) and (.comments.nodes[0] | codex))
     | .comments.nodes[0].body as $b
-    | "finding\t\(.path):\(.line // .originalLine)\t\((($b | capture("!\\[(?<p>P[0-9]+) Badge\\]") | .p) // "P?"))\t\(if .isOutdated then "(outdated) " else "" end)\($b | split("\n")[0] | gsub("<[^>]*>|!\\[[^\\]]*\\]\\([^)]*\\)|\\*\\*"; "") | gsub("^\\s+|\\s+$"; "") | .[0:'"$FINDING_CHARS"'])" )
+    | "finding\t\(.path):\(.line // .originalLine)\t\((($b | capture("!\\[(?<p>P[0-9]+) Badge\\]") | .p) // "P?"))\t\(.id)\t\(if .isOutdated then "(outdated) " else "" end)\($b | split("\n")[0] | gsub("<[^>]*>|!\\[[^\\]]*\\]\\([^)]*\\)|\\*\\*"; "") | gsub("^\\s+|\\s+$"; "") | .[0:'"$FINDING_CHARS"'])" )
 '
 
 pr_query='
@@ -70,7 +71,7 @@ query($owner: String!, $name: String!, $num: Int!) {
       reviewThreads(first: 100) {
         pageInfo { hasNextPage }
         nodes {
-          isResolved isOutdated path line originalLine
+          id isResolved isOutdated path line originalLine
           comments(first: 1) { nodes { body author { __typename login } } }
         }
       }
@@ -78,13 +79,13 @@ query($owner: String!, $name: String!, $num: Int!) {
   }
 }'
 
-pr_lines=$(gh api graphql -F owner="$owner" -F name="$name" -F num="$pr" -f query="$pr_query" --jq "$pr_jq") \
+pr_lines=$(gh api graphql -f owner="$owner" -f name="$name" -F num="$pr" -f query="$pr_query" --jq "$pr_jq") \
   || die "can't read PR #$pr in $repo"
 
 head_sha="" pr_state="" is_draft="" mergeable="" merge_state="" summary="none" summary_sha="-" threads_more="false"
 findings=""
 finding_count=0
-while IFS=$'\t' read -r key f1 f2 f3; do
+while IFS=$'\t' read -r key f1 f2 f3 f4; do
   case "$key" in
     head) head_sha="$f1" ;;
     state) pr_state="$f1" ;;
@@ -95,7 +96,7 @@ while IFS=$'\t' read -r key f1 f2 f3; do
     finding)
       finding_count=$((finding_count + 1))
       if [ -n "$findings" ]; then findings="$findings | "; fi
-      findings="$findings$f1 $f2 $f3"
+      findings="$findings$f1 $f2 $f3 $f4"
       ;;
   esac
 done <<<"$pr_lines"

@@ -206,11 +206,14 @@ Runs on each batch PR once CI is green on its head.
    Security, concurrency, and architectural diffs get the table's escalation seat.
 2. Verify every finding yourself before relaying it. Check that it still applies at the PR head,
    since the lane may already have fixed it. Relay only real findings to the batch, which fixes
-   them and pushes. Then resolve each thread you've verified, fixed or not real, with a reply that
-   says which (GraphQL `resolveReviewThread`). A finding stays open until someone does.
+   them and pushes. Then clear each thread you've verified, fixed or not real, with
+   `scripts/resolve-thread.sh <thread-id> <sha>`. It replies on the thread pointing at the commit
+   (the fix, or the head you verified against when the finding isn't real) and resolves it. It
+   refuses any thread the Codex bot didn't start or that isn't on an open PR in this repo. A
+   finding stays open until someone does.
    For the Codex bot, `scripts/pr-ready.sh <pr>` does the mechanical part. It prints at most 6
    lines (head sha, CI, draft, whether the bot's summary posted, its unresolved findings with
-   outdated ones flagged, mergeable state) and exits 0 only when all of them pass.
+   thread ids and outdated ones flagged, mergeable state) and exits 0 only when all of them pass.
 3. When the PR is green with no unanswered verified findings, check the merge policy.
    - **The orchestrator merges.** The policy names this kind of PR. Show each condition it lists
      with a tool result, merge pinned to the head you checked (`gh pr merge --match-head-commit
