@@ -1,17 +1,16 @@
 ---
 name: doc-rot
 description: >
-  Sniffs out stale and deprecated documentation — markdown files, code comments, docstrings, and
-  commented-out code — then updates or removes it. Grounds every staleness call against the actual
-  code before acting: auto-fixes the high-confidence rot, surfaces judgment calls for review.
-  Trigger on: "find stale docs", "outdated documentation", "doc rot", "doc sniffer", "clean up docs",
-  "are the docs current", "deprecated docs", "fix the README", "stale comments", "remove commented-out code".
-  For a broader sweep of dead variables, functions, files, or tests (not just docs/comments), use dead-code-cleanup instead.
+  Finds stale docs, comments, docstrings, and commented-out code, checks each against the actual
+  code, then fixes or removes it. Auto-fixes the clear rot and surfaces judgment calls. Trigger
+  on: "find stale docs", "doc rot", "are the docs current", "fix the README".
 ---
 
 # Doc Rot
 
 Documentation lies as the code moves on. This skill finds the lies and fixes them — across `*.md` files, inline comments, docstrings, and commented-out code. It's the docs counterpart to `dead-code-cleanup`, and it enforces the comment hygiene rules in the user's CLAUDE.md ("explain WHY not WHAT"; "one canon version per file"; "update existing docs, don't proactively create new ones").
+
+For a broader sweep of dead variables, functions, files, or tests (not just docs and comments), use `dead-code-cleanup` instead.
 
 The core discipline: **a doc isn't stale because it looks old — it's stale because it contradicts the code.** Ground every call against the actual codebase before flagging it. A "removed" symbol might just be renamed; a "broken" path might live elsewhere now.
 

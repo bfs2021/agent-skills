@@ -1,12 +1,17 @@
 ---
 name: route
-description: Recommend which AI provider and model to use for a task, given your routing table and current subscription burn. Recommends only; never switches anything or starts the work. Use when the user asks where to run something, which model to use, whether to switch providers, or invokes /route. Other skills (backlog-routing) call it once per batch to pick a lane.
+description: >
+  Recommends which AI provider and model to run a task on, from your routing table and current
+  subscription burn. Recommends only; never switches anything or starts the work. Trigger on:
+  /route, "which model should I use", "where should I run this", "should I switch providers".
 ---
 
 # Route
 
 Recommend a provider and model for the task at hand. Recommend only. Never switch anything
 automatically, and never start the work in place of answering.
+
+Other skills call it too: `backlog-routing` asks it once per batch to pick a lane.
 
 ## Setup (once per machine)
 

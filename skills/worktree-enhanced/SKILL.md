@@ -1,11 +1,9 @@
 ---
 name: worktree-enhanced
 description: >
-  Sets up a git worktree for isolated feature work — creates the branch, configures the worktree,
-  detects whether a dev server is already running, and handles project-specific setup.
-  Trigger on: "create a worktree", "set up a new branch", "start work on issue #X",
-  "work on this in isolation", "new worktree for", "start a feature branch",
-  "create an isolated environment for", "set up worktree".
+  Sets up a git worktree for isolated feature work: creates the branch, configures the worktree,
+  detects a running dev server, and handles project setup. Trigger on: "create a worktree", "start
+  work on issue #X", "start a feature branch", "work on this in isolation".
 ---
 
 # Enhanced Worktree Workflow

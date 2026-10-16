@@ -1,6 +1,9 @@
 ---
 name: evidence-check
-description: "An honesty gate that makes an AI back up its claims with real evidence instead of presenting guesses as fact. Use as an always-on background behavior, and invoke explicitly when the user says show your work, prove it, how do you know that, evidence check, what's your source, back that up, or when the AI is recommending a course of action. Apply as a cross-cutting self-check before presenting technical claims, recommendations, or architectural guidance."
+description: >
+  Honesty gate that backs claims with real evidence instead of stating guesses as fact. Runs
+  always-on as a self-check before technical claims and recommendations. Invoke explicitly on:
+  "show your work", "prove it", "how do you know that", "what's your source".
 ---
 
 # Evidence Check

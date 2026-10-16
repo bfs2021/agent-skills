@@ -1,6 +1,9 @@
 ---
 name: post-merge
-description: Runs the post-merge workflow after a PR is merged. Phase 0 syncs the correct base branch and deletes the merged branch and its worktree so later work never starts from stale state. Phase 1 automatically closes the loop on linked GitHub issues (posts a completion comment, marks acceptance criteria done, closes the issue if fully addressed, ticks any parent epic) without asking permission — including for PRs merged into a non-default base like develop, where GitHub won't auto-close. Phase 2 recommends the single best next issue to work on, scoring all open issues by value, effort, and age. Invoke whenever the user says a PR was merged — "merged PR #42", "just merged the auth fix", "PR is merged", "I merged #123".
+description: >
+  Runs after a PR merges: syncs the base branch, deletes the merged branch and worktree, closes
+  out linked issues without asking (even on a develop base), then recommends the next issue.
+  Trigger on: "merged PR #42", "PR is merged", "just merged the auth fix", "I merged #123".
 ---
 
 # Post-Merge Workflow

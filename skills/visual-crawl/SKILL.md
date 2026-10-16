@@ -1,11 +1,9 @@
 ---
 name: visual-crawl
 description: >
-  Crawls the running app at randomized breakpoints, screenshots visual issues, checks design token
-  consistency, and tests interactive elements. Each run covers different ground by design.
-  Trigger on: "visual QA", "audit the app visually", "screenshot all the pages",
-  "check for visual regressions", "crawl the site for issues", "visual design system audit",
-  "responsive check", "screenshot the routes", "look for visual bugs", "check the UI".
+  Crawls the running app at random breakpoints, screenshots visual issues, checks design token
+  consistency, and tests interactive elements. Each run covers different ground. Trigger on:
+  "visual QA", "crawl the site for issues", "responsive check", "look for visual bugs".
 ---
 
 # Visual Crawl

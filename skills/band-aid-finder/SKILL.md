@@ -1,14 +1,10 @@
 ---
 name: band-aid-finder
 description: >
-  Scans a change or codebase area for band-aid fixes that suppress a symptom instead of resolving
-  the underlying cause, traces each to its actual root cause, and proposes the fix that addresses it.
-  Distinguishes a band-aid from a deliberate, documented mitigation (incident hotfix, third-party
-  defect, cost-outweighs-benefit) so it doesn't dogmatically demand a root-cause fix. The
-  counterweight to KISS: it argues against a fix so simple it only hides the symptom.
-  Trigger on: "is this a real fix or a band-aid", "am I treating the symptom", "why does this keep
-  happening", "this feels hacky", "find the root cause", "search and destroy quick fixes",
-  "is this a workaround".
+  Finds fixes that hide a symptom instead of fixing the cause, traces each to its root cause, and
+  proposes the real fix. Allows deliberate, documented mitigations. Trigger on: "is this a real
+  fix or a band-aid", "am I treating the symptom", "why does this keep happening", "find the root
+  cause".
 ---
 
 # Band-Aid Finder

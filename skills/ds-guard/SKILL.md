@@ -1,11 +1,10 @@
 ---
 name: ds-guard
 description: >
-  Automatically run after any edit to a .css, .tsx, .ts, .jsx, or .js file that contains styling.
-  Triggers on: new CSS rules, className changes, style props, token usages, or any visual/layout change.
-  Checks the diff against the project's design system token inventory and living style guide (canon, if one exists).
-  Flags hardcoded values, off-system tokens, Tailwind utility classes, and patterns not established in the living style guide.
-  Run this before every commit that touches styles or components.
+  Automatically run after any edit to a .css, .tsx, .ts, .jsx, or .js file that touches styling,
+  and before every commit that touches styles or components. Checks the diff against the design
+  system tokens and living style guide. Trigger on: new CSS rules, className changes, style props,
+  "check this against the design system".
 ---
 
 ## When to invoke (auto-trigger)

@@ -1,6 +1,9 @@
 ---
 name: tdd-implement
-description: Implements a feature or fix using Test-Driven Development — write failing tests first, then implement just enough to make them pass, then refactor. Keeps tests focused on acceptance criteria rather than implementation details. Use when building something new with TDD, or when the user wants to start from tests rather than code. Trigger on "implement with TDD", "use TDD for this", "write the tests first", "TDD workflow", "red-green-refactor".
+description: >
+  Implements a feature or fix test-first: write failing tests, make them pass with the least code,
+  then refactor. Tests track acceptance criteria, not implementation details. Trigger on:
+  "implement with TDD", "write the tests first", "TDD workflow", "red-green-refactor".
 ---
 
 # TDD Implementation

@@ -1,14 +1,9 @@
 ---
 name: comment-reaper
 description: >
-  Finds and removes unnecessary code comments - the ones that restate the code, cite an issue
-  number, narrate refactor history, or wrap a one-line function in six lines of JSDoc. Sorts every
-  find into auto-fix, propose, or never-touch, so the WHY comments survive the sweep.
-  Trigger on: "comment reaper", "reap comments", "remove unnecessary comments", "too many comments",
-  "verbose comments", "clean up the comments", "strip redundant JSDoc", "comment audit",
-  "comment hygiene", "our comments are noise".
-  For comments that are WRONG rather than merely unnecessary, use doc-rot. For comments that are
-  hard to READ rather than unnecessary, use plain-language-audit.
+  Finds and removes comments that add nothing: ones that restate the code, cite issue numbers,
+  narrate refactor history, or pad a one-liner with JSDoc. Keeps the WHY comments. Trigger on:
+  "reap comments", "remove unnecessary comments", "too many comments", "comment audit".
 ---
 
 # Comment Reaper

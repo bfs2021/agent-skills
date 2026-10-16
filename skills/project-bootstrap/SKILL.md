@@ -1,6 +1,10 @@
 ---
 name: project-bootstrap
-description: Bootstrap a project under ~/Projects with the standard agent scaffolding, stamped from the starter kit at shared/Development/templates/starter-kit - a CLAUDE.md from the house template, the stack-agnostic core (.editorconfig, .gitignore, .claude settings/launch, worktree-port script), an optional stack layer, and a row in the ~/Projects/CLAUDE.md root map. Use when creating a new project or repo, or when an existing repo is missing its CLAUDE.md. Trigger on "bootstrap this project", "new project setup", "stamp a CLAUDE.md", "set up agent scaffolding", "give this repo a CLAUDE.md".
+description: >
+  Stamps a project under ~/Projects with the standard agent scaffolding from the starter kit: a
+  house-template CLAUDE.md, core config, an optional stack layer, and a row in the root map. Use
+  for a new repo or one missing its CLAUDE.md. Trigger on: "bootstrap this project", "new project
+  setup", "stamp a CLAUDE.md", "set up agent scaffolding".
 ---
 
 # Project Bootstrap

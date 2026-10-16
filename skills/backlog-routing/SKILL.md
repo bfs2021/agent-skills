@@ -1,19 +1,10 @@
 ---
 name: backlog-routing
 description: >
-  A milestone-driven system for working a GitHub backlog with several agents at once while merge
-  authority stays where the repo's adapter puts it (the human, by default). Seven stages, each run
-  only when asked: intake (turn playtest notes, screenshots, or findings into labeled issues),
-  shape (propose a milestone's contents and ordered plan), plan (split the milestone into
-  collision-free batches, route each through the `route`
-  skill to the cheapest capable seat, and pick cloud or local), dispatch (start the batches:
-  paste-ready briefs for tools that can't be launched from the orchestrator, local agent sessions,
-  or cloud agent sessions driven by a goal condition), review gate
-  (two-model review before a PR is ready to merge), close-out (after each merge), and release
-  (when the milestone empties). Repo-specific rules come from an adapter skill. Trigger on:
-  "backlog routing", "route the backlog", "plan the milestone", "batch the milestone", "dispatch
-  the batches", "intake these findings", "file issues from my playtest notes", "shape vX.Y",
-  "what goes in the next milestone", "run the release", "which model should do this issue".
+  Works a GitHub milestone with several agents at once: intake findings as issues, shape and batch
+  the milestone, route batches to the cheapest capable model, dispatch, review, release. Merge
+  authority comes from the repo adapter. Trigger on: "route the backlog", "plan the milestone",
+  "dispatch the batches", "file issues from my playtest notes".
 ---
 
 # Backlog routing

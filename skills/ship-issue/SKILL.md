@@ -1,6 +1,9 @@
 ---
 name: ship-issue
-description: End-to-end conductor that drives a single GitHub issue all the way to a merged PR. Chains the issue-workflow skills — sync the base branch, analyze the issue, implement a minimal fix with a test, open a PR, drive CI to green, confirm the merge, run post-merge cleanup, and wrap up. Use to take one issue from a cold start to merged in a single command. Trigger on "ship issue #X", "ship #123", "take #N to merge", "do issue #X end to end", "full issue loop for #N", "run the whole issue #X".
+description: >
+  Drives one GitHub issue from cold start to merged PR: sync, analyze, minimal fix with a test,
+  PR, CI green, merge, post-merge cleanup, wrap-up. Trigger on: "ship issue #X", "ship #123",
+  "take #N to merge", "do issue #X end to end".
 ---
 
 # Ship Issue

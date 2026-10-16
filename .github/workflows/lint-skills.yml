@@ -1,0 +1,13 @@
+name: Lint skills
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 .github/scripts/lint-skills.py

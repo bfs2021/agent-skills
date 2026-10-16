@@ -1,13 +1,9 @@
 ---
 name: dead-code-cleanup
 description: >
-  Identifies and removes dead/orphaned code, tests, and Storybook stories — including trivial tests
-  that check only obvious behavior, prove only that retired references are absent, or cover rare
-  edge cases with no real value.
-  Always validates that code is truly unused before deleting anything.
-  Trigger on: "remove dead code", "clean up unused files", "delete orphaned components",
-  "find unused exports", "remove trivial tests", "clean up the codebase", "what code can we delete",
-  "prune the repo", "remove stale stories".
+  Finds and removes dead or orphaned code, tests, and Storybook stories, including trivial tests
+  that prove nothing. Validates that code is truly unused before deleting anything. Trigger on:
+  "remove dead code", "find unused exports", "what code can we delete", "prune the repo".
 ---
 
 # Dead Code Cleanup

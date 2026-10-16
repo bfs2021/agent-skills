@@ -1,11 +1,9 @@
 ---
 name: ci-fix-with-memory
 description: >
-  Automatically invoke when CI checks fail on a PR.
-  Triggers on: any mention of CI failure, red checks, failed GitHub Actions, or "CI is broken/failing".
-  Reads session handoffs and a known-issues log to avoid repeating failed fix attempts.
-  Do NOT wait for user to ask — invoke as soon as a CI failure is confirmed.
-  Not for local-only test failures (use test-fix instead) or lint-only failures with an obvious single-line fix.
+  Automatically invoke when CI checks fail on a PR. Do NOT wait for the user to ask; invoke as
+  soon as a CI failure is confirmed. Reads session handoffs and a known-issues log so failed fixes
+  aren't retried. Trigger on: "CI is failing", "red checks", "GitHub Actions failed", "fix CI".
 ---
 
 ## When to invoke (auto-trigger)

@@ -1,11 +1,10 @@
 ---
 name: test-workflow
 description: >
-  Automatically run after editing source files to select and run the appropriate test suite.
-  Triggers on: any src/ file edit before a commit, or when the user says "run tests", "check tests", or "make sure tests pass".
-  Selects unit, E2E, visual regression, or CSS lint based on what changed. Protects running dev servers.
-  Do NOT wait for user to ask after a code change — run proactively before committing.
-  Not for documentation-only or config-only edits, or when the user says to skip tests.
+  Automatically run after editing source files, before committing, to pick and run the right
+  suite: unit, E2E, visual regression, or CSS lint. Do NOT wait for the user to ask. Protects
+  running dev servers. Trigger on: src/ edits before a commit, "run tests", "check tests", "make
+  sure tests pass".
 ---
 
 ## When to invoke (auto-trigger)

@@ -1,13 +1,10 @@
 ---
 name: code-health-audit
 description: >
-  Kicks off a recurring code-health audit — the "embarrassing code" / overengineering sweep that
-  turns vague tech-debt anxiety into a short list of measurable, validated simplifications to ship.
-  Bakes in the pre-flight discipline (sync the correct base branch, confirm the active worktree and
-  its dev server, list files in scope) so the audit never runs against stale or wrong-worktree code.
-  Trigger on: "embarrassing code audit", "overengineering audit", "code health audit",
-  "find simplification candidates", "what can we simplify", "tech debt sweep", "audit the codebase",
-  "find overengineered code", "what's embarrassing in this repo".
+  Runs the "embarrassing code" / overengineering sweep and turns tech-debt anxiety into a short
+  list of validated simplifications. Syncs the base branch and checks the worktree first so it
+  never audits stale code. Trigger on: "code health audit", "overengineering audit", "what can we
+  simplify", "tech debt sweep".
 ---
 
 # Code Health Audit

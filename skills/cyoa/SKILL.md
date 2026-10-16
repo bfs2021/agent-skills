@@ -1,6 +1,10 @@
 ---
 name: cyoa
-description: Choose Your Own Adventure mode. Use when the user invokes /cyoa, asks for "cyoa mode", "choose your own adventure", or asks to make a development task feel like a game. Frames a real software task as a branching adventure where the user picks design decisions at every meaningful step. Produces real, working code — the adventure framing is purely a stylistic and decision-elicitation layer on top of normal development.
+description: >
+  Choose Your Own Adventure mode: frames a real dev task as a branching story where the user picks
+  the design decision at each fork, and still produces real, working code. Use on /cyoa or when a
+  task should feel like a game. Trigger on: "cyoa mode", "choose your own adventure", "make this a
+  game".
 ---
 
 # CYOA — Choose Your Own Adventure

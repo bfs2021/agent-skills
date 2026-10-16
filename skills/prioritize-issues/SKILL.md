@@ -1,6 +1,10 @@
 ---
 name: prioritize-issues
-description: Analyzes all open GitHub issues to identify the highest-priority candidates for implementation. Scores by value, effort, age, and roadmap alignment. Produces a ranked top-5 with detailed technical specs for the top 3. Use when planning what to work on next, triaging a backlog, or preparing for a sprint. Trigger on phrases like "what should I work on", "prioritize my issues", "what's the highest value issue", "triage my backlog", "help me pick the next issue", "what's worth doing next".
+description: >
+  Scores all open GitHub issues by value, effort, age, and roadmap fit, and returns a ranked top 5
+  with specs for the top 3. Read-only. Use when picking the next issue or triaging a backlog.
+  Trigger on: "what should I work on", "prioritize my issues", "triage my backlog", "what's worth
+  doing next".
 ---
 
 # Issue Prioritization

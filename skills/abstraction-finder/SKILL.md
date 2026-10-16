@@ -1,14 +1,10 @@
 ---
 name: abstraction-finder
 description: >
-  Scans a codebase or a named area for recurring patterns that could be extracted into shared,
-  general-purpose code, and proposes the smallest form for each — helper, service, base class,
-  template, or util — with the exact call sites it would replace. The inverse of a conformance
-  check: it discovers duplication worth unifying rather than checking one change against existing
-  patterns. Enforces the rule of three and refuses to abstract single-use or surface-similar code.
-  Trigger on: "where are we repeating ourselves", "what could be abstracted", "find duplication",
-  "is there a shared helper for this", "could this be DRY'd up", "extract a common pattern",
-  "find abstraction candidates".
+  Finds recurring patterns worth extracting into shared code and proposes the smallest form for
+  each (helper, util, base class) with the call sites it would replace. Enforces the rule of
+  three. Trigger on: "where are we repeating ourselves", "find duplication", "what could be
+  abstracted", "could this be DRY'd up".
 ---
 
 # Abstraction Finder
