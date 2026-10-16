@@ -22,13 +22,13 @@ gh repo view --json nameWithOwner -q .nameWithOwner
 Pull the full backlog — not just recent issues:
 
 ```bash
-gh issue list --state open --limit 200 --json number,title,labels,createdAt,body,milestone,comments
+gh issue list --state open --limit 200 --json number,title,labels,createdAt,body,milestone,comments,state
 ```
 
 If the repo has more than 200 open issues, paginate. Also fetch any recent comments on the top candidates to catch context updates:
 
 ```bash
-gh issue view [NUMBER] --json number,title,body,labels,comments,createdAt,milestone
+gh issue view [NUMBER] --json number,title,body,labels,comments,createdAt,milestone,state
 ```
 
 ### Milestones
@@ -47,7 +47,10 @@ split is the input to the scoring rows below, and "1 open of 12" ranks very diff
 
 ## 3. Pre-filter
 
-Skip issues labeled `wontfix`, `duplicate`, `invalid`, or `question`. Skip closed issues (should be excluded by the list query, but double-check).
+Filter out non-actionable items:
+- **State must be OPEN**: Skip any closed issues. If checking specific issue numbers manually, querying cross-references, or following older transcripts, verify `state == "OPEN"` first. Never rank or propose an issue whose state is `CLOSED`.
+- **Exclude PRs**: In GitHub, pull requests share the issue numbering space and `gh issue view` returns PRs as well. Filter out items that are pull requests (`gh pr view [NUMBER]` succeeds or the payload contains PR indicators).
+- **Exclude noise labels**: Skip issues labeled `wontfix`, `duplicate`, `invalid`, or `question`.
 
 ## 4. Score each issue
 
@@ -64,7 +67,7 @@ Cheap way to do it:
 ```bash
 for n in $(gh issue list --state open --limit 200 --json number --jq '.[].number'); do
   echo "===== #$n ====="
-  gh issue view $n --json title,body --jq '"TITLE: \(.title)\n\(.body)"' | head -40
+  gh issue view $n --json title,body,state --jq 'select(.state == "OPEN") | "TITLE: \(.title)\n\(.body)"' | head -40
 done
 ```
 
