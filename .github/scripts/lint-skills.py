@@ -6,6 +6,7 @@ subset these files use: top-level `key: value`, quoted scalars, and `>` / `|`
 block scalars.
 """
 import json
+import os
 import re
 import sys
 from pathlib import Path
@@ -19,6 +20,10 @@ errors = []
 
 def fail(skill, msg):
     errors.append(f"{skill}: {msg}")
+
+
+def strip_comment(s):
+    return re.sub(r"(^|\s)#.*$", "", s).strip()
 
 
 def parse_frontmatter(text):
@@ -50,6 +55,10 @@ def parse_frontmatter(text):
         while cont and not cont[-1]:
             cont.pop()
 
+        # YAML drops a " #..." comment after a plain scalar or block indicator.
+        if value[:1] not in ('"', "'"):
+            value = strip_comment(value)
+
         if value[:1] in (">", "|"):
             if value.lstrip(">|+-0123456789"):
                 raise ValueError(f"{key}: unexpected text after block indicator")
@@ -62,7 +71,7 @@ def parse_frontmatter(text):
                 raise ValueError(f"{key}: unterminated {q}-quoted string")
             value = value[1:-1]
         elif cont:
-            value = " ".join([value] + cont)
+            value = " ".join([value] + [strip_comment(c) for c in cont])
         fields[key] = value.strip()
     return fields
 
@@ -73,7 +82,7 @@ def main():
 
     market = json.loads((ROOT / ".claude-plugin" / "marketplace.json").read_text())
     listed = {
-        Path(s).name
+        os.path.normpath(s)
         for plugin in market.get("plugins", [])
         for s in plugin.get("skills", [])
     }
@@ -89,9 +98,9 @@ def main():
             fm = parse_frontmatter(skill_md.read_text())
         except ValueError as e:
             fail(name, f"frontmatter doesn't parse: {e}")
-            fm = {}
+            fm = None
 
-        if fm:
+        if fm is not None:
             if fm.get("name") != name:
                 fail(name, f"name {fm.get('name')!r} doesn't match folder name")
             desc = fm.get("description", "")
@@ -100,7 +109,7 @@ def main():
             elif len(desc) > MAX_DESCRIPTION:
                 fail(name, f"description is {len(desc)} chars (max {MAX_DESCRIPTION})")
 
-        if name not in listed:
+        if f"skills/{name}" not in listed:
             fail(name, "not listed in .claude-plugin/marketplace.json")
         if f"(skills/{name}/SKILL.md)" not in readme:
             fail(name, "not linked from README.md")
@@ -116,8 +125,8 @@ def main():
                 if "/Users/" in line:
                     fail(name, f"absolute /Users/ path at {f.relative_to(ROOT)}:{n}")
 
-    for stale in sorted(listed - names):
-        fail(stale, "listed in marketplace.json but has no skills/ folder")
+    for stale in sorted(listed - {f"skills/{n}" for n in names}):
+        fail(stale, "listed in marketplace.json but isn't a skills/ folder")
 
     if errors:
         print("\n".join(errors))
