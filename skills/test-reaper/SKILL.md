@@ -87,7 +87,7 @@ The judgments grep can't make, which you make by reading:
 - **Is every assertion in this case a mock call-check?** If so it can only fail if the wiring changes, never if the behavior does.
 - **Is the case only a negative reference guard?** Source/content is read, a retired string/selector/key is asserted absent, and no positive behavior or output is observed. If yes, treat it as delete-or-rewrite, not automatic coverage.
 - **Does the test name promise something the body never observes?** A case called `should persist state changes to IndexedDB` that asserts an adapter mock was called has not observed persistence. That gap is the single strongest signal among single-test checks.
-- **Is the asserted value just the stub coming back?** If a case sets `mockReturnValue(x)` and then asserts the result equals `x`, all it proves is that the code passed the stub through.
+- **Is the asserted value just the stub coming back?** If a case sets `mockReturnValue(x)` and then asserts the result equals `x`, all it proves is that the code passed the stub through. The exception is a wrapper or facade whose contract is to return the collaborator's result unchanged. There, the echo is the behavior, and it catches a dropped return or the wrong collaborator.
 - **For each mocked boundary, does any test drive the other side with the payload the caller really sends?** Seam checks work per boundary, not per test. Give that question its own pass (see "Over-mocking and seam gaps" below).
 
 ## Over-mocking and seam gaps
@@ -97,7 +97,7 @@ A call-check can be precise and still prove only half of a contract. `expect(api
 Shapes to look for:
 
 - **Mock plus filler.** Every assertion is either a call-check or an existence-only filler (`toBeDefined`, `toBeTruthy`, `not.toBeNull`). A `toBeInTheDocument` on specific copy is a real observation, not filler. It's mock-only with padding. The padding is the only reason a strict "every assertion is a call-check" rule misses it.
-- **Mock echo.** The case stubs a return value and then asserts the result equals that stub. It can only fail if the code stops passing values through.
+- **Mock echo.** The case stubs a return value and then asserts the result equals that stub. It can only fail if the code stops passing values through. Skip it when pass-through is the unit's job (see "Pass-through contracts" under the keep list).
 - **Promised collaborator mocked.** A file named `*integration*` or `*persistence*` that `jest.mock`s the local module its name promises to integrate with. It's the name/behavior mismatch at file scale, and it outranks any single mismatched case.
 - **Stub-child render.** A component test replaces a child with a stub and then only asserts the stub rendered. That's wiring, not behavior.
 - **Mocked everywhere.** A local module that's `jest.mock`ed in several files, where every test that imports it for real uses a hand-rolled fixture. On paper its seam is covered from both sides. In practice nothing has ever crossed it.
@@ -136,6 +136,7 @@ Present as one triaged list: `file:line`, current name, what it actually asserts
 - **Orchestrator tests that mock collaborators on purpose.** If the unit under test is the sequencing (what runs first, what blocks on what, what gets skipped on abort), mocking the steps is the right design. These count as good when they also assert on the orchestrator's own output.
 - **Callback-prop contracts.** For a controlled component, `onChange` / `onSave` / `onCancel` is the public API. A call-check that deep-checks the callback's argument observes exactly what a consumer would see. Don't flag it just because the matcher is `toHaveBeenCalledWith`.
 - **Subscription and registration APIs.** For a pub/sub or event-registration module, "the handler was called with X" is the behavior itself.
+- **Pass-through contracts.** A wrapper, facade, or adapter that has to hand back its collaborator's result unchanged. A mock-echo test is the right test there: it fails if the wrapper returns `undefined`, transforms the value, or calls the wrong collaborator.
 
 ## Honest rewrites
 
@@ -153,7 +154,9 @@ This is the part that matters most, because a deleted test can't fail to tell yo
 
 1. **Full suite green after every batch.** Not the scoped file, the whole suite.
 2. **Prove the survivors still bite.** For each file you reaped, break the source deliberately (flip a boolean, return early, change a string) and confirm something goes red. If nothing does, the reap removed the only real coverage and you need to restore or rewrite it. Undo the deliberate break.
-3. **Confirm over-mock and seam findings by breaking the mocked side.** Break the real implementation of the module the test mocks (make the store setter a no-op, make the route reject large bodies, drop a field in the serializer) and run the flagged test file. If it stays green, the finding is CONFIRMED: the test can't see that module. If it goes red, the finding was wrong, so drop it. Undo the break. Until you've done this, label findings PLAUSIBLE.
+3. **Confirm over-mock and seam findings by breaking the mocked side.** Break the real implementation of the module the test mocks (make the store setter a no-op, make the route reject large bodies, drop a field in the serializer) and run the tests. Undo the break afterwards. Until you've done this, label findings PLAUSIBLE.
+   - **Over-mock finding (one test):** run the flagged file. Green means CONFIRMED, since that test can't see the module. Red means the finding was wrong, so drop it.
+   - **Seam gap (a boundary):** run the whole relevant suite, not just the flagged file. The flagged file stays green by design, because it mocks the module. The seam gap is CONFIRMED only if every test stays green. If any other test goes red, something does cross the seam, so drop the seam-gap finding. The flagged test can still be an over-mock finding on its own.
 4. `npm run type-check` and `npm run lint` - deleted tests often orphan imports and fixtures.
 5. Report the case count before and after, plus the count of files that lost their last meaningful assertion (that number should be zero).
 
