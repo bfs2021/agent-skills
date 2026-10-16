@@ -1,18 +1,16 @@
 ---
 name: plain-language-audit
 description: >
-  Sweeps a codebase's text — comments, docstrings, markdown docs, and user-facing UI copy — for
-  jargon that could be plainer, AI writing tells/tropes, and verbose text that could be tightened.
-  Auto-fixes unambiguous swaps, surfaces judgment calls for review. Trigger on: "jargon audit",
-  "plain language audit", "find jargon", "sounds too technical", "AI tells", "AI slop in the docs",
-  "sounds like AI wrote this", "too wordy", "make this more concise", "simplify this copy",
-  "plain-language sweep". For code correctness/structure issues (fake fallbacks, dead logic), use
-  dead-code-cleanup or code-health-audit instead — this skill is prose/tone only.
+  Sweeps comments, docstrings, docs, and UI copy for jargon, AI writing tells, and wordy text.
+  Auto-fixes clear swaps and surfaces judgment calls. Prose and tone only. Trigger on: "plain
+  language audit", "find jargon", "sounds like AI wrote this", "too wordy".
 ---
 
 # Plain Language Audit
 
 A sweep for text that's harder to read than it needs to be — jargon standing in for a plainer word, AI writing tells that make prose sound generated instead of written, and verbosity that says less in more words. Covers code comments, docstrings, markdown docs, and user-facing UI copy/strings.
+
+It's prose and tone only. For code correctness or structure problems (fake fallbacks, dead logic), use `dead-code-cleanup` or `code-health-audit` instead.
 
 This is the prose counterpart to `doc-rot` (which fixes docs that are *wrong*) and `code-health-audit` (which fixes code that's *overengineered*) — this one fixes text that's *hard to read*, whether or not it's accurate.
 

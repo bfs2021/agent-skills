@@ -1,6 +1,10 @@
 ---
 name: kiss
-description: Apply KISS principles to a diff or set of changes. Trims the change to the minimum surface required to achieve the stated goal — removes refactors, cleanup, style fixes, and "while I'm here" additions that aren't strictly necessary. Use when a diff has crept beyond its original scope or when you want to commit the smallest possible change.
+description: >
+  Trims a diff to the minimum change that meets its goal, dropping refactors, cleanup, style
+  fixes, and "while I'm here" extras. Use when a diff has crept past its scope or before
+  committing the smallest possible change. Trigger on: "KISS this", "trim this diff", "scope
+  creep", "smallest possible change".
 ---
 
 # KISS — Keep It Minimal

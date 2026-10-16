@@ -1,11 +1,10 @@
 ---
 name: pr-review-fix-pipeline
 description: >
-  Autonomous PR review that also applies fixes for non-controversial issues — combines review,
-  fix, test, and commit into a single pipeline. Unlike a read-only review, this writes code.
-  Only use on feature branches where you're comfortable with automatic edits.
-  Trigger on: "review and fix PR", "auto-fix the PR", "clean up this PR automatically",
-  "review PR #X and fix issues", "fix whatever's wrong in this PR", "run the review pipeline".
+  Reviews a PR and applies fixes for the non-controversial findings: review, fix, test, and commit
+  in one pass. Writes code, so use it only on feature branches where automatic edits are fine.
+  Trigger on: "review and fix PR", "auto-fix the PR", "review PR #X and fix issues", "run the
+  review pipeline".
 ---
 
 # Autonomous PR Review & Fix Pipeline

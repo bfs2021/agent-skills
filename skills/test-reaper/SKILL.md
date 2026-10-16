@@ -1,16 +1,10 @@
 ---
 name: test-reaper
 description: >
-  Finds and removes dead or trivial tests - duplicates, tests that only assert a mock was called,
-  render checks that prove nothing, negative reference/source scans that only prove retired text is
-  absent, and suites whose name promises behavior they never observe.
-  Distinguishes a test that tests nothing from one that tests the wrong thing, because those need
-  opposite fixes.
-  Trigger on: "test reaper", "reap tests", "remove trivial tests", "dead tests", "useless tests",
-  "our tests don't test anything", "prune the test suite", "test audit", "which tests are worthless",
-  "tests that always pass".
-  For tests that are FAILING, use test-fix. For removing tests because their source is dead, use
-  dead-code-cleanup.
+  Finds and removes dead or trivial tests: duplicates, mock-only asserts, render checks that prove
+  nothing, and over-mocked suites. Tells a test that tests nothing from one that tests the wrong
+  thing. Trigger on: "reap tests", "useless tests", "our tests don't test anything", "too much
+  mocking".
 ---
 
 # Test Reaper

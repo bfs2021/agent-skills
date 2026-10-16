@@ -70,6 +70,8 @@ skills/
 
 The `description` field is what the agent reads to decide whether to invoke the skill — keep trigger phrases concrete and current.
 
+Keep descriptions short: what the skill does, when to use it, and three or four trigger phrases. Claude Code caps the total size of its skill list, so long descriptions push other skills out of it, and routing notes like "not for X, use Y" belong in the body. CI runs `.github/scripts/lint-skills.py`, which fails on a description over 400 characters, a `name` that doesn't match its folder, a skill missing from `marketplace.json` or this README, or an absolute `/Users/` path.
+
 ## Install
 
 Each agent looks for skills in a specific directory. Copy or symlink the skill folder (the whole thing, not just `SKILL.md`) into the right path for whichever tool you're using.

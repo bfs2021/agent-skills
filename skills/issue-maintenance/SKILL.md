@@ -1,25 +1,10 @@
 ---
 name: issue-maintenance
 description: >
-  Periodic and on-demand maintenance pass over a repo's open GitHub issue backlog. Re-labels
-  miscategorized or unlabeled issues (bug/enhancement/question/invalid/duplicate) and bug
-  lifecycle labels (needs-repro/needs-info) following the same decision logic as Anthropic's own
-  dogfooded triage-issue command; re-scores every open issue with prioritize-issues' value/effort/
-  age rubric and writes the resulting priority:high/medium/low/post-mvp label; fills in missing
-  sizing labels (complexity/model-power or the repo's equivalent) where the repo documents a
-  convention for them; applies mechanical
-  plain-language fixes (AI-tell swaps, filler removal) to issue title/body via the
-  plain-language-audit skill and surfaces jargon/verbosity/tone judgment calls for review; clusters
-  granular open issues that share a domain, keyword, or parent reference and, once a maintainer
-  approves a specific batch, merges them into one appropriately-sized consolidated ticket and closes
-  the originals into it — proposal-only until approved, distinct from duplicate detection.
-  Auto-applies high-confidence changes, flags ambiguous ones in a single tracking issue. Unlike
-  prioritize-issues (read-only ranked report) or analyze-issue (single-issue technical spec), this
-  skill WRITES to issues. Needs no repo clone — GitHub issue metadata only, via gh. Trigger on:
-  "run issue maintenance", "maintain the issue backlog", "clean up and re-prioritize issues",
-  "issue maintenance pass", "tidy the backlog", "weekly issue maintenance", "re-label and
-  re-prioritize open issues", "group similar issues", "cluster related issues", "combine similar
-  issues into one ticket", "consolidate small issues".
+  Writes to a repo's open GitHub issues: fixes type and lifecycle labels, re-scores priority,
+  fills sizing labels, cleans up issue prose, and proposes merging clusters of small issues.
+  Auto-applies safe changes, flags the rest. Trigger on: "run issue maintenance", "tidy the
+  backlog", "re-prioritize open issues", "consolidate small issues".
 ---
 
 # Issue Maintenance

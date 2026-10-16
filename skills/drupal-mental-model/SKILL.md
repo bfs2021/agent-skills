@@ -1,6 +1,10 @@
 ---
 name: drupal-mental-model
-description: Use when explaining code, debugging, or discussing architecture with Jack — map programming concepts to Drupal equivalents he already knows from years of Drupal/theming work. Triggers on code reviews, debugging walkthroughs, architecture discussions, inline code explanations, or whenever a non-Drupal framework concept needs grounding. Skip for non-programming topics.
+description: >
+  Explains code by mapping programming concepts to the Drupal equivalents Jack knows from years of
+  Drupal and theming work. Use in code explanations, debugging walkthroughs, code reviews, and
+  architecture talks when a non-Drupal concept needs grounding. Trigger on: "explain this code",
+  "walk me through this", "what's the Drupal equivalent".
 ---
 
 # Drupal Mental Model

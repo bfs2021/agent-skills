@@ -1,11 +1,10 @@
 ---
 name: visual-qa-pipeline
 description: >
-  Turns a visual QA crawl into shipped work: crawl the running app, triage findings by severity,
-  file Major+ findings as GitHub issues with screenshots, batch the small stuff into one roll-up
-  issue, and optionally open fix PRs for mechanical design-system violations. Runnable on a schedule.
-  Trigger on: "visual QA pipeline", "crawl and file issues", "autonomous visual QA",
-  "visual QA to PR", "screenshot the app and open issues", "nightly visual QA", "ship visual fixes".
+  Turns a visual QA crawl into shipped work: triages findings, files Major+ as GitHub issues with
+  screenshots, rolls the small stuff into one issue, and can open fix PRs for design-system
+  violations. Schedulable. Trigger on: "visual QA pipeline", "crawl and file issues", "nightly
+  visual QA", "ship visual fixes".
 ---
 
 # Visual QA Pipeline

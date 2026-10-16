@@ -1,11 +1,10 @@
 ---
 name: browser-debugger-cli
 description: >
-  Inspect and debug live web pages using the Chrome DevTools Protocol via the `bdg` CLI.
-  Use for targeted DOM queries, computed style checks, layout debugging, and CDP method calls
-  without loading a full page snapshot. Prefer over chrome-devtools-mcp for token efficiency.
-  Trigger on: "inspect element", "check computed styles", "query the DOM", "what does the DOM look like",
-  "debug layout", "check the CSS on", "run a DevTools query", "what's the rendered style of", "inspect the page".
+  Inspects live web pages through the Chrome DevTools Protocol with the `bdg` CLI: targeted DOM
+  queries, computed styles, layout debugging, and raw CDP calls, without loading a full page
+  snapshot. Trigger on: "inspect element", "check computed styles", "query the DOM", "debug
+  layout".
 ---
 
 # browser-debugger-cli (bdg)
@@ -14,6 +13,7 @@ description: >
 - Query specific DOM elements or attributes
 - Run targeted CDP methods without full page snapshots
 - Debug with minimal token overhead
+- Prefer it over chrome-devtools-mcp for token efficiency; fall back to the MCP when `bdg` can't do the job
 
 ## Prerequisites
 - Install: `npm install -g browser-debugger-cli@alpha`

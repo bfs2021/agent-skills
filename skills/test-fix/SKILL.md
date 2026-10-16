@@ -1,11 +1,10 @@
 ---
 name: test-fix
 description: >
-  Automatically invoke when any test run produces failures.
-  Triggers on: test output showing FAIL, test errors, or assertion failures in unit or E2E suites.
-  Applies a strict 3-attempt limit per failure to avoid debugging spirals — stops and escalates if not resolved.
-  Do NOT wait for user to ask; invoke immediately when tests fail.
-  Not for build errors, type errors, or lint failures — those aren't test failures.
+  Automatically invoke when any test run produces failures: FAIL output, test errors, or assertion
+  failures in unit or E2E suites. Do NOT wait for the user to ask. Hard limit of 3 fix attempts
+  per failure, then stops and escalates. Trigger on: "tests are failing", "fix the tests", "tests
+  are broken".
 ---
 
 ## When to invoke (auto-trigger)

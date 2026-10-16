@@ -1,11 +1,10 @@
 ---
 name: github-screenshot
 description: >
-  Generates GitHub-compatible markdown for screenshots using raw.githubusercontent.com URLs
-  via the generate-github-image-markdown.sh script.
-  Trigger on: "add a screenshot to this PR", "embed image in issue", "attach screenshot",
-  "paste image into GitHub", "add screenshot to docs", "insert image in markdown",
-  "show a screenshot in the PR", "add image to issue".
+  Generates GitHub-ready image markdown for screenshots using raw.githubusercontent.com URLs via
+  generate-github-image-markdown.sh. Use whenever a PR, issue, or doc needs an image. Trigger on:
+  "add a screenshot to this PR", "embed image in issue", "attach screenshot", "add screenshot to
+  docs".
 ---
 
 # GitHub Screenshot Helper

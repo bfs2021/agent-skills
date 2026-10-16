@@ -1,6 +1,9 @@
 ---
 name: analyze-issue
-description: Analyzes a single GitHub issue and produces a detailed technical specification ready for implementation. Fetches the issue, discovers existing patterns in the codebase, defines scope boundaries, and produces an implementation plan with MVP tests. Use before starting work on an issue to understand it fully. Trigger on "analyze issue #X", "spec out #123", "what does issue #X involve", "break down this issue", "create a tech spec for #X", "plan issue #N".
+description: >
+  Turns one GitHub issue into an implementation-ready tech spec: existing patterns, scope
+  boundaries, a plan, and MVP tests. Use before starting work on an issue. Trigger on: "analyze
+  issue #X", "spec out #123", "break down this issue", "plan issue #N".
 ---
 
 # Issue Analysis

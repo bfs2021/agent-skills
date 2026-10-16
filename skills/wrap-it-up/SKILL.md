@@ -1,6 +1,9 @@
 ---
 name: wrap-it-up
-description: Close out the current chat with a tight summary and a sweep of the current project's durable context files — memory entries, status and task docs, plan files, and any project-specific reminders — so nothing important dies in the transcript. Trigger on /wrap-it-up, "wrap it up", "wrap up this chat", "close out this conversation", "end of chat", "summarize and clean up", or any end-of-session housekeeping request. Pairs with /handoff (which preps a new chat) — wrap-it-up is the backward-looking bookend.
+description: >
+  Closes out a chat with a tight summary and a sweep of the project's durable context files
+  (memory, status docs, plans) so nothing dies in the transcript. The backward-looking pair to
+  /handoff. Trigger on: /wrap-it-up, "wrap it up", "close out this conversation", "end of chat".
 ---
 
 # wrap-it-up

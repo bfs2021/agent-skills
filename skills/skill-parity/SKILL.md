@@ -1,11 +1,9 @@
 ---
 name: skill-parity
 description: >
-  Keeps skills in sync across Claude Code, Codex, Antigravity, and shared .agents/skills paths.
-  Handles copying, updating, pruning, and verifying parity across all provider locations.
-  Trigger on: "sync my skills", "hydrate codex with skills", "copy skill to antigravity",
-  "add this skill to codex", "update skills across providers", "skill parity check",
-  "push skills to all providers", "are my skills in sync", "propagate skill changes".
+  Keeps skills in sync across Claude Code, Codex, Antigravity, and shared .agents/skills paths:
+  copies, updates, prunes, and verifies parity. Trigger on: "sync my skills", "skill parity
+  check", "are my skills in sync", "push skills to all providers".
 ---
 
 # Skill Parity
