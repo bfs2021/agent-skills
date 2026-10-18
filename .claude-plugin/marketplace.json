@@ -42,6 +42,7 @@
         "./skills/pr-review-fix-pipeline",
         "./skills/prioritize-issues",
         "./skills/project-bootstrap",
+        "./skills/project-pulse",
         "./skills/route",
         "./skills/ship-issue",
         "./skills/skill-parity",
