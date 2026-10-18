@@ -56,7 +56,7 @@ Grouped by type. Each links to its `SKILL.md`.
 
 ### Session & communication
 
-- **[project-pulse](skills/project-pulse/SKILL.md)** — Read-only status sweep across every repo under a projects root plus open Claude Code sessions. Sorts into waiting on you, stranded work, ready to pick up, and dormant, and leads with one next action. Ships a small `collect.sh` that reads origin, never the local checkout.
+- **[project-pulse](skills/project-pulse/SKILL.md)** — Read-only status sweep across every git repo under a projects folder, plus recent agent sessions when the agent can read them. Sorts into waiting on you, stranded work, ready to pick up, and dormant, and leads with one next action. Ships a small `collect.sh` that reads origin, never the local checkout.
 - **[wrap-it-up](skills/wrap-it-up/SKILL.md)** — Close out a chat with a tight summary and a sweep of related context files (memory, plans, status, logs).
 - **[cyoa](skills/cyoa/SKILL.md)** — Choose Your Own Adventure mode. Frame the task as a branching story; every fork is a real design decision.
 - **[drupal-mental-model](skills/drupal-mental-model/SKILL.md)** — Explain code by mapping framework concepts to Drupal equivalents, for a Drupal/theming background.

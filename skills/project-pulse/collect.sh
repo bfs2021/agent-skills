@@ -2,18 +2,26 @@
 # Prints one plain-text block per git repo under a projects root, for project-pulse.
 # Read-only for working trees, branches and remotes: fetch only moves remote-tracking refs,
 # and every status call skips the index lock so it can't trip a live session's git.
-# Usage: collect.sh [projects-root]   (default: ~/Projects)
+# Usage: collect.sh [projects-root] [folder-to-skip ...]
+#   Root defaults to the current directory. Repos are found one or two levels down, so both a
+#   flat root and one grouped into folders work. Skip names match a folder at either level.
 set -u
-root="${1:-$HOME/Projects}"
+root="${1:-$PWD}"
 root="${root%/}"
+shift $(( $# > 0 ? 1 : 0 ))
 
 for gitdir in "$root"/*/.git "$root"/*/*/.git; do
   [ -e "$gitdir" ] || continue
   repo="${gitdir%/.git}"
-  case "$repo/" in */Archived/* | */sandboxes/*) continue ;; esac
+  rel="${repo#"$root"/}"
+  skipped=""
+  for name in "$@"; do
+    case "/$rel/" in */"$name"/*) skipped=1 ;; esac
+  done
+  [ -n "$skipped" ] && continue
   g() { git -C "$repo" --no-optional-locks "$@"; }
 
-  echo "== ${repo#"$root"/}"
+  echo "== $rel"
   url=$(g remote get-url origin 2>/dev/null)
   if [ -z "$url" ]; then
     echo "note: no origin remote, local only"
@@ -52,8 +60,8 @@ for gitdir in "$root"/*/.git "$root"/*/*/.git; do
         unmerged=0
         [ -n "$base" ] && unmerged=$(git -C "$wt" rev-list --count "origin/$base..HEAD" 2>/dev/null || echo 0)
         if [ "${dirty:-0}" -gt 0 ] || [ "$unmerged" -gt 0 ] || [ -n "$flags" ]; then
-          rel="${wt#"$repo"/}"; [ "$wt" = "$repo" ] && rel="(main checkout)"
-          echo "worktree: $rel [$branch] dirty=$dirty unmerged=$unmerged$flags"
+          wt_rel="${wt#"$repo"/}"; [ "$wt" = "$repo" ] && wt_rel="(main checkout)"
+          echo "worktree: $wt_rel [$branch] dirty=$dirty unmerged=$unmerged$flags"
         else
           clean=$((clean + 1))
         fi
