@@ -48,10 +48,15 @@ before it can group anything. Two mechanisms exist and repos use one or the othe
 - **GitHub native issue types** (Bug / Feature / Task and custom ones). There is no
   `gh issue type` subcommand — since `gh` 2.94.0 issue types ride on the ordinary commands
   (`--type` on create/edit, a type field on `list`/`view`), and before that they were reachable
-  only through the API. Detect them with `gh api repos/{owner}/{repo}/issue-types` or
-  `mcp__github__list_issue_types`. A 404 means this repo has none, which is the ordinary answer
-  for a personal-account repo — issue types are configured at organization level. If the repo does
-  have them, that is the typing mechanism: fetch the type per issue in the §2 bulk call.
+  only through the API. Detect them with GraphQL:
+  `gh api graphql -F owner='{owner}' -F name='{repo}' -f query='query($owner:String!,$name:String!){repository(owner:$owner,name:$name){issueTypes(first:10){nodes{id name}}}}'`
+  (`gh` fills `{owner}`/`{repo}` in `-F` values, never inside the query string). A null
+  `issueTypes` or an empty `nodes` list means this repo has none, which is the ordinary answer for a
+  personal-account repo — issue types are configured at organization level. Don't detect with
+  `gh api repos/{owner}/{repo}/issue-types`: it can return 200 with Task / Bug / Feature on a repo
+  that can't use them, where `gh issue edit --type` fails and the GraphQL mutation silently sets
+  nothing. If the repo does have them, that is the typing mechanism: fetch the type per issue in
+  the §2 bulk call.
 - **A type label convention** — `epic`, `bug`, `enhancement`, `user-story`, `documentation`, and
   so on. The convention doc from §4b usually names these outright (Narraitor's `.github/labels.md`
   has a `## Type Labels` section listing exactly six). Use that list as the type mapping rather
