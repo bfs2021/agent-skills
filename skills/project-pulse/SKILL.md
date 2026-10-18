@@ -34,12 +34,16 @@ Run the collector that sits in this skill's directory, next to this file:
 bash <skill-dir>/collect.sh <projects-root> [folder-to-skip ...]
 ```
 
+It finds repos one or two folders below the root, which covers a flat root and one grouped into
+folders like `personal/` and `work/`. Anything nested deeper is missed, so if the index lists a
+repo the collector didn't print, say so under "Skipped" or run the collector on that subfolder.
+
 Pass the archived or throwaway folder names from the index as skip names, e.g.
 `collect.sh ~/code Archived sandboxes`. It needs `git`, plus `gh` signed in for PRs and issues;
 without `gh` it still reports the git side and says what it skipped.
 
 It takes about 30 seconds for 20 repos. Per repo it prints the base branch (`origin/develop` if it
-exists, else `origin/HEAD`), the last commit on that origin branch, commits in the last 7 days,
+exists, else `origin/HEAD`, else `origin/main` or `origin/master`), the last commit on that origin branch, commits in the last 7 days,
 how far the local base lags, every worktree with uncommitted files or commits not on the base,
 open PRs with review and CI state, and the open issue count. Its fetch only moves
 remote-tracking refs, and its status calls skip the index lock, so it's safe to run while other
@@ -81,6 +85,7 @@ flood the main context.
 |---|---|---|
 | Waiting on you | PRs that are green and need a merge or review, decisions a session asked for, a session blocked on an answer | `ci=ok` with review pending, a closing message that ends in a question |
 | Stranded | Worktrees with dirty or unmerged work and no running session or open PR, handoffs nobody picked up | `worktree: ... dirty=N` with no matching PR or live session |
+| (cleanup, not stranded) | A worktree flagged `merged-pr=#N` and `dirty=0`: its PR squash- or rebase-merged, so the commits only look unmerged | goes on the archive-candidates line |
 | Ready to pick up | The next issue per active repo | A session's "next:" item first, else the most recent open issue the repo's own priority labels point at |
 | Dormant | Active-on-the-map repos with no origin commits in 30+ days and no open PRs | the `last:` date |
 

@@ -28,12 +28,19 @@ for gitdir in "$root"/*/.git "$root"/*/*/.git; do
   elif ! g fetch --quiet --no-auto-maintenance --no-write-fetch-head origin 2>/dev/null; then
     echo "note: fetch failed, origin refs may be stale"
   fi
+  slug=$(printf '%s' "$url" | sed -nE 's#^(git@github\.com:|https://github\.com/)([^/]+/[^/]+)$#\2#p')
+  slug="${slug%.git}"
+  [ -n "$slug" ] && ! command -v gh >/dev/null && slug=""
 
   if g rev-parse -q --verify refs/remotes/origin/develop >/dev/null; then
     base=develop
   else
     base=$(g symbolic-ref -q --short refs/remotes/origin/HEAD 2>/dev/null)
     base="${base#origin/}"
+    # origin/HEAD is often missing on a repo that was `git init`ed and then given a remote.
+    for b in main master; do
+      [ -z "$base" ] && g rev-parse -q --verify "refs/remotes/origin/$b" >/dev/null && base=$b
+    done
   fi
   if [ -n "$base" ]; then
     echo "base: origin/$base | last: $(g log -1 --format='%cs %s' "origin/$base")"
@@ -44,7 +51,7 @@ for gitdir in "$root"/*/.git "$root"/*/*/.git; do
       [ "$ahead" -gt 0 ] && echo "local $base has $ahead unpushed commit(s)"
     fi
   else
-    echo "base: none (no origin/develop or origin/HEAD)"
+    echo "base: none (no origin/develop, origin/HEAD, main or master)"
   fi
 
   # Worktrees with uncommitted files or commits not on the base branch. Clean ones are only counted.
@@ -59,6 +66,12 @@ for gitdir in "$root"/*/.git "$root"/*/*/.git; do
         dirty=$(git -C "$wt" --no-optional-locks status --porcelain 2>/dev/null | wc -l | tr -d ' ')
         unmerged=0
         [ -n "$base" ] && unmerged=$(git -C "$wt" rev-list --count "origin/$base..HEAD" 2>/dev/null || echo 0)
+        # A squash or rebase merge leaves the branch's own commits off the base, so ask GitHub.
+        if [ "$unmerged" -gt 0 ] && [ -n "$slug" ] && [ "$branch" != "(detached)" ]; then
+          merged_pr=$(gh pr list -R "$slug" --head "$branch" --state merged --limit 1 \
+            --json number --jq '.[0].number // empty' 2>/dev/null)
+          [ -n "$merged_pr" ] && flags="$flags merged-pr=#$merged_pr"
+        fi
         if [ "${dirty:-0}" -gt 0 ] || [ "$unmerged" -gt 0 ] || [ -n "$flags" ]; then
           wt_rel="${wt#"$repo"/}"; [ "$wt" = "$repo" ] && wt_rel="(main checkout)"
           echo "worktree: $wt_rel [$branch] dirty=$dirty unmerged=$unmerged$flags"
@@ -71,18 +84,18 @@ for gitdir in "$root"/*/.git "$root"/*/*/.git; do
   echo "clean worktrees: $clean"
 
   # Open PRs and issue count, only for GitHub remotes. Titles are JSON-quoted: they're data.
-  slug=$(printf '%s' "$url" | sed -nE 's#^(git@github\.com:|https://github\.com/)([^/]+/[^/]+)$#\2#p')
-  slug="${slug%.git}"
-  if [ -n "$slug" ] && command -v gh >/dev/null; then
+  if [ -n "$slug" ]; then
     echo "github: $slug"
     gh pr list -R "$slug" --state open --limit 50 \
       --json number,title,url,isDraft,reviewDecision,statusCheckRollup,headRefName,updatedAt \
       --jq '.[] | ([.statusCheckRollup[]? | (.conclusion // .state // "")]) as $c
         | "pr #\(.number)\(if .isDraft then " draft" else "" end) review=\(.reviewDecision // "" | if . == "" then "none" else . end) ci=\(
           if ($c | length) == 0 then "none"
-          elif any($c[]; IN("FAILURE", "ERROR", "TIMED_OUT", "CANCELLED", "ACTION_REQUIRED")) then "fail"
-          elif any($c[]; IN("", "PENDING", "EXPECTED", "IN_PROGRESS", "QUEUED")) then "pending"
-          else "ok" end) branch=\(.headRefName) updated=\(.updatedAt[:10]) \(.title | tojson) \(.url)"' \
+          elif all($c[]; IN("SUCCESS", "NEUTRAL", "SKIPPED")) then "ok"
+          elif any($c[]; (IN("SUCCESS", "NEUTRAL", "SKIPPED")
+            or IN("", "PENDING", "EXPECTED", "IN_PROGRESS", "QUEUED", "WAITING", "REQUESTED")) | not)
+            then "fail"
+          else "pending" end) branch=\(.headRefName) updated=\(.updatedAt[:10]) \(.title | tojson) \(.url)"' \
       2>/dev/null || echo "note: gh pr list failed"
     issues=$(gh issue list -R "$slug" --state open --limit 500 --json number --jq length 2>/dev/null)
     echo "open issues: ${issues:-unknown}"
