@@ -10,7 +10,8 @@
 # Narrow on purpose, so an agent can be allowed to run it without being allowed to run arbitrary
 # `gh pr comment`. It refuses unless all of these hold:
 # - the PR is open
-# - <sha> is the PR's current head (a review of an older commit can't pass the gate)
+# - <sha>, resolved to a full commit id, is the PR's current head (a review of an older commit
+#   can't pass the gate)
 #
 # Exit 0: posted. Exit 1: refused. Exit 2: bad argument or gh failure.
 # Run it from a checkout of the repo (or with GH_REPO set). Needs only `gh`, bash 3.2 or newer.
@@ -44,10 +45,8 @@ state_lines=$(gh pr view "$pr" --json state,headRefOid --jq '"\(.state)\t\(.head
   || die "can't read PR #$pr"
 IFS=$'\t' read -r pr_state head_sha <<<"$state_lines"
 [ "$pr_state" = "OPEN" ] || refuse "PR is $pr_state, not OPEN"
-case "$head_sha" in
-  "$sha"*) ;;
-  *) refuse "head is ${head_sha:0:10}, not $sha; review the current head" ;;
-esac
+full_sha=$(gh api "repos/{owner}/{repo}/commits/$sha" --jq .sha) || die "can't resolve $sha to one commit"
+[ "$full_sha" = "$head_sha" ] || refuse "head is ${head_sha:0:10}, not ${full_sha:0:10}; review the current head"
 
 findings=""
 if [ ! -t 0 ]; then

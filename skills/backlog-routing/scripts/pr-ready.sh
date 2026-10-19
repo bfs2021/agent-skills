@@ -19,9 +19,10 @@
 #     blocks even if the other source passes.
 #   - Orchestrator comment: the other-family review is a comment the orchestrator posts with
 #     post-review.sh, from the account gh is signed in as. The newest such comment naming the
-#     head sha decides: it passes at "Open findings: 0". A comment that names an older sha is
-#     stale (a push landed after the review). Comments from anyone else are ignored, so nobody
-#     else can forge a pass.
+#     head sha decides: it passes at "Open findings: 0". The comment has to start with the
+#     "Other-family review" line and carry full-sha, Reviewer and Open findings lines, the shape
+#     post-review.sh writes. A comment that names an older sha is stale (a push landed after the
+#     review). Comments from anyone else are ignored, so nobody else can forge a pass.
 # - Findings: every inline thread Codex started that is still unresolved, whichever source passed.
 #   An outdated one (a push changed the commented lines) is flagged, not dropped: GitHub marks a
 #   thread outdated whether or not the push fixed it, and the bot doesn't re-review, so a thread
@@ -57,13 +58,13 @@ def codex: .author.__typename == "Bot" and .author.login == "'"$CODEX_LOGIN"'";
 def line($re): map(select(test($re))) | .[0];
 def review:
   (.body | split("\n")) as $l
-  | ($l | line("^Reviewed sha: [0-9a-f]{7,40}[ ]*$")) as $s
+  | ($l | line("^Reviewed sha: [0-9a-f]{40}[ ]*$")) as $s
   | ($l | line("^Open findings: [0-9]+[ ]*$")) as $o
   | ($l | line("^Reviewer: .+$")) as $r
-  | if $s == null or $o == null then empty
-    else {sha: ($s | capture("(?<x>[0-9a-f]{7,40})").x),
+  | if $l[0] != "Other-family review" or $s == null or $o == null or $r == null then empty
+    else {sha: ($s | capture("(?<x>[0-9a-f]{40})").x),
           open: ($o | capture("(?<n>[0-9]+)").n | tonumber),
-          who: (if $r == null then "-" else ($r | sub("^Reviewer: "; "") | sub("[ ]+$"; "")) end)}
+          who: ($r | sub("^Reviewer: "; "") | sub("[ ]+$"; ""))}
     end;
 .data.viewer.login as $me
 | .data.repository.pullRequest
@@ -78,7 +79,7 @@ def review:
         | "summary\t\(if ($rows | length) > 0 and ($rows | all(contains("**Completed**"))) then "complete" else "running" end)\t\(([$rows[] | capture("`(?<s>[0-9a-f]{7,40})`") | .s] | last) // "-")"
       end ),
   ( [.comments.nodes[] | select(.author.login == $me) | review] as $revs
-    | ([$revs[] | select(.sha as $x | $head | startswith($x))] | last) as $cur
+    | ([$revs[] | select(.sha == $head)] | last) as $cur
     | if $cur != null then "review\tcurrent\t\($cur.sha[0:10])\t\($cur.open)\t\($cur.who)"
       elif ($revs | length) > 0 then "review\tstale\t\($revs | last | .sha[0:10])\t0\t-"
       else "review\tnone\t-\t0\t-" end ),
