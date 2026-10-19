@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# pr-ready.sh [--codex] <pr-number>
+# pr-ready.sh <pr-number>
 #
 # One call that answers "is this PR ready to merge?" for the review gate. Prints at most 6 lines
 # and exits 0 only when every line passes. Exit 1 means not ready, exit 2 means it couldn't tell
@@ -11,20 +11,22 @@
 # What counts, and why:
 # - CI: the newest check run per check name on the head sha (a re-run replaces the run it
 #   re-ran), plus commit statuses. No checks reported yet is pending, not a pass or a failure.
-# - Review (default): the other-family review is a comment the orchestrator posts with
-#   post-review.sh, from the account gh is signed in as. The newest such comment naming the head
-#   sha decides: it passes when it says "Open findings: 0". A comment that names an older sha is
-#   stale (a push landed after the review), and no comment at all is "not posted". Comments from
-#   anyone else are ignored, so nobody else can forge a pass.
-# - Review (--codex): for repos whose second reviewer is the Codex bot. The summary marker
-#   comment exists and every row of its table says Completed. The bot reviews when a PR opens, is
-#   marked ready, or is asked to (@codex review), not on every push.
-# - Findings: every inline thread Codex started that is still unresolved, in either mode, since
-#   the bot's GitHub app may still post. An outdated one (a push changed the commented lines) is
-#   flagged, not dropped: GitHub marks a thread outdated whether or not the push fixed it, and
-#   the bot doesn't re-review, so a thread only clears when someone verifies the fix (or that
-#   the finding isn't real) and resolves it. Each finding carries its thread id for
-#   resolve-thread.sh, which is the narrow way to do that.
+# - Review: passes on either of two sources, since Antigravity stands in only when the Codex bot
+#   isn't available.
+#   - Codex: the summary marker comment exists and every row of its table says Completed. The bot
+#     reviews when a PR opens, is marked ready, or is asked to (@codex review), not on every
+#     push. A summary that's posted but not Completed means the review is still running, and that
+#     blocks even if the other source passes.
+#   - Orchestrator comment: the other-family review is a comment the orchestrator posts with
+#     post-review.sh, from the account gh is signed in as. The newest such comment naming the
+#     head sha decides: it passes at "Open findings: 0". A comment that names an older sha is
+#     stale (a push landed after the review). Comments from anyone else are ignored, so nobody
+#     else can forge a pass.
+# - Findings: every inline thread Codex started that is still unresolved, whichever source passed.
+#   An outdated one (a push changed the commented lines) is flagged, not dropped: GitHub marks a
+#   thread outdated whether or not the push fixed it, and the bot doesn't re-review, so a thread
+#   only clears when someone verifies the fix (or that the finding isn't real) and resolves it.
+#   Each finding carries its thread id for resolve-thread.sh, which is the narrow way to do that.
 # - The bot is matched by exact login and the Bot account type, so a lookalike account can't forge
 #   the summary or a finding.
 
@@ -40,14 +42,9 @@ die() {
   exit 2
 }
 
-mode="comment"
-if [ "${1:-}" = "--codex" ]; then
-  mode="codex"
-  shift
-fi
 pr="${1:-}"
 case "$pr" in
-  '' | *[!0-9]*) die "usage: pr-ready.sh [--codex] <pr-number>" ;;
+  '' | *[!0-9]*) die "usage: pr-ready.sh <pr-number>" ;;
 esac
 
 repo=$(gh api 'repos/{owner}/{repo}' --jq .full_name) || die "can't resolve owner/repo"
@@ -114,7 +111,7 @@ pr_lines=$(gh api graphql -f owner="$owner" -f name="$name" -F num="$pr" -f quer
   || die "can't read PR #$pr in $repo"
 
 head_sha="" pr_state="" is_draft="" mergeable="" merge_state="" summary="none" summary_sha="-" threads_more="false"
-rev_state="none" rev_sha="-" rev_open=0 rev_who="-"
+rev_state="none" rev_sha="-" rev_open=0 rev_who="-" review_blocked="" comment_why=""
 findings=""
 finding_count=0
 while IFS=$'\t' read -r key f1 f2 f3 f4; do
@@ -191,39 +188,34 @@ else
   draft_out="no"
 fi
 
-if [ "$mode" = "codex" ]; then
-  review_label="codex summary"
-  case "$summary" in
-    complete) review_out="posted, completed on ${summary_sha}" ;;
-    running)
-      review_out="posted, not marked Completed"
-      ready=0
-      ;;
-    *)
-      review_out="not posted"
-      ready=0
-      ;;
-  esac
+codex_ok=0
+case "$summary" in
+  complete) codex_ok=1 ;;
+  running) review_blocked="codex review still running" ;;
+esac
+
+comment_ok=0
+case "$rev_state" in
+  current)
+    if [ "$rev_open" -eq 0 ]; then
+      comment_ok=1
+    else
+      comment_why="${rev_open} open on ${rev_sha} by ${rev_who}"
+    fi
+    ;;
+  stale) comment_why="stale (reviewed ${rev_sha}, head moved)" ;;
+esac
+
+if [ -n "$review_blocked" ]; then
+  review_out="$review_blocked"
+  ready=0
+elif [ "$codex_ok" -eq 1 ]; then
+  review_out="codex summary completed on ${summary_sha}"
+elif [ "$comment_ok" -eq 1 ]; then
+  review_out="comment on ${rev_sha} by ${rev_who}, 0 open"
 else
-  review_label="review"
-  case "$rev_state" in
-    current)
-      if [ "$rev_open" -eq 0 ]; then
-        review_out="posted on ${rev_sha} by ${rev_who}, 0 open"
-      else
-        review_out="posted on ${rev_sha} by ${rev_who}, ${rev_open} open"
-        ready=0
-      fi
-      ;;
-    stale)
-      review_out="stale (reviewed ${rev_sha}, head moved)"
-      ready=0
-      ;;
-    *)
-      review_out="not posted"
-      ready=0
-      ;;
-  esac
+  review_out="${comment_why:-not posted}"
+  ready=0
 fi
 
 if [ "$threads_more" = "true" ]; then
@@ -250,7 +242,7 @@ fi
 echo "head: $head_sha"
 echo "ci: $ci_out"
 echo "draft: $draft_out"
-echo "$review_label: $review_out"
+echo "review: $review_out"
 echo "findings: $findings_out"
 echo "mergeable: $merge_out"
 
