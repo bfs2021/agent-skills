@@ -60,7 +60,7 @@ def review:
   (.body | split("\n")) as $l
   | ($l | line("^Reviewed sha: [0-9a-f]{40}[ ]*$")) as $s
   | ($l | line("^Open findings: [0-9]+[ ]*$")) as $o
-  | ($l | line("^Reviewer: .+$")) as $r
+  | ($l | line("^Reviewer: [^ ].*$")) as $r
   | if $l[0] != "Other-family review" or $s == null or $o == null or $r == null then empty
     else {sha: ($s | capture("(?<x>[0-9a-f]{40})").x),
           open: ($o | capture("(?<n>[0-9]+)").n | tonumber),

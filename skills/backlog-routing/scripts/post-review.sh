@@ -37,9 +37,7 @@ reviewer="$4"
 [[ "$pr" =~ ^[0-9]+$ ]] || die "not a PR number: $pr"
 [[ "$sha" =~ ^[0-9a-f]{7,40}$ ]] || die "not a commit sha: $sha"
 [[ "$open" =~ ^[0-9]+$ ]] || die "not a count: $open"
-case "$reviewer" in
-  '' | *[$'\n\r\t']*) die "reviewer must be one line of plain text" ;;
-esac
+[[ "$reviewer" =~ ^[^[:space:]]([^$'\n\r\t']*[^[:space:]])?$ ]] || die "reviewer must be one non-blank line of plain text"
 
 state_lines=$(gh pr view "$pr" --json state,headRefOid --jq '"\(.state)\t\(.headRefOid)"') \
   || die "can't read PR #$pr"
