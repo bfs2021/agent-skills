@@ -48,8 +48,8 @@ The adapter supplies:
 - **Merge policy**: who merges, and what must be shown first. With no policy the default is
   human-only: no agent merges, approves, or enables auto-merge. An adapter can give merging to the
   orchestrator for the PRs it names (say, everything except drafts and PRs with a Local check),
-  and lists the conditions to show first (gates, CI, a clean review gate). It also says how long
-  to wait for an automated reviewer.
+  and lists the conditions to show first (gates, CI, a clean review gate). It also names the
+  second reviewer (a bot, or a seat the orchestrator drives) and how long to wait for a bot.
 - **Milestone and release convention**: how milestones are named, what a release PR contains, which
   release steps belong to the human.
 - **Label names** for type, priority, size, model tier, and the two this skill needs (`needs-local`,
@@ -187,24 +187,41 @@ Runs on each batch PR once CI is green on its head.
 1. Two reviewers from different model families where available:
    - the seat `route` picks for the code review phase, which must not be the family that wrote
      the batch
-   - an automated reviewer the repo already runs (the Codex bot, say)
+   - a second reviewer the adapter names. It can be a bot the repo already runs (the Codex bot,
+     say), or a seat the orchestrator drives, in which case nothing posts on its own: the
+     orchestrator sends it a read-only review brief naming the PR and head sha, and the reviewer
+     writes its findings somewhere the orchestrator can read. The adapter also says which to use
+     when more than one is available, and what to do when one can't run.
 
-   When no other-family seat is routed for review, that automated reviewer is the second family
-   on its own, as long as it isn't the family writing the lanes. Its review has to have posted: a
-   missing review means the gate hasn't passed. The adapter says how long to wait. If it never
-   posts, the PR goes to the human.
+   When no other-family seat is routed for review, the adapter's reviewer is the second family on
+   its own, as long as it isn't the family writing the lanes. A review of the head has to exist: a
+   missing one means the gate hasn't passed. For a bot, the adapter says how long to wait. If no
+   reviewer can run, the PR goes to the human with "other-family review missing" on its queue line.
 
    Security, concurrency, and architectural diffs get the table's escalation seat.
 2. Verify every finding yourself before relaying it. Check that it still applies at the PR head,
    since the lane may already have fixed it. Relay only real findings to the batch, which fixes
-   them and pushes. Then clear each thread you've verified, fixed or not real, with
-   `scripts/resolve-thread.sh <thread-id> <sha>`. It replies on the thread pointing at the commit
-   (the fix, or the head you verified against when the finding isn't real) and resolves it. It
-   refuses any thread the Codex bot didn't start or that isn't on an open PR in this repo. A
-   finding stays open until someone does.
-   For the Codex bot, `scripts/pr-ready.sh <pr>` does the mechanical part. It prints at most 6
-   lines (head sha, CI, draft, whether the bot's summary posted, its unresolved findings with
-   thread ids and outdated ones flagged, mergeable state) and exits 0 only when all of them pass.
+   them and pushes. Then record the outcome, by who wrote the review:
+   - **Orchestrator-posted review** (a seat the orchestrator drives). Post the verified findings and the sha you
+     reviewed as one PR comment with `scripts/post-review.sh <pr> <sha> <open> <reviewer>`, the
+     findings on stdin. It refuses a sha that isn't the current head. `<open>` is how many still
+     need a fix. A fix push makes the comment stale, so the next round posts a new one, and the
+     newest comment naming the head wins. A finding you dismissed as not real stays out of the
+     comment.
+   - **Bot review threads.** Clear each thread you've verified, fixed or not real, with
+     `scripts/resolve-thread.sh <thread-id> <sha>`. It replies on the thread pointing at the
+     commit (the fix, or the head you verified against when the finding isn't real) and resolves
+     it. It refuses any thread the Codex bot didn't start or that isn't on an open PR in this
+     repo. A finding stays open until someone does. A bot that posts findings after you stopped
+     relying on it is still answered this way.
+
+   `scripts/pr-ready.sh <pr>` does the mechanical part. It prints 6 lines (head sha, CI, draft,
+   the review, unresolved bot findings with thread ids and outdated ones flagged, mergeable state)
+   and exits 0 only when all of them pass. The review line passes on either source: the Codex
+   bot's summary with every row Completed, or the newest orchestrator-posted comment naming the
+   head with 0 open findings, from the account `gh` runs as. A posted summary that isn't Completed
+   yet blocks, since that review is still running. A stale comment (a push landed after it) or no
+   review at all fails.
 3. When the PR is green with no unanswered verified findings, check the merge policy.
    - **The orchestrator merges.** The policy names this kind of PR. Show each condition it lists
      with a tool result, merge pinned to the head you checked (`gh pr merge --match-head-commit

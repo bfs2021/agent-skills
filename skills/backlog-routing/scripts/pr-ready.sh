@@ -11,13 +11,24 @@
 # What counts, and why:
 # - CI: the newest check run per check name on the head sha (a re-run replaces the run it
 #   re-ran), plus commit statuses. No checks reported yet is pending, not a pass or a failure.
-# - Codex summary: the marker comment exists and every row of its table says Completed. The bot
-#   reviews when a PR opens, is marked ready, or is asked to (@codex review), not on every push.
-# - Codex findings: every inline thread Codex started that is still unresolved. An outdated one
-#   (a push changed the commented lines) is flagged, not dropped: GitHub marks a thread outdated
-#   whether or not the push fixed it, and the bot doesn't re-review, so a thread only clears when
-#   someone verifies the fix (or that the finding isn't real) and resolves it. Each finding
-#   carries its thread id for resolve-thread.sh, which is the narrow way to do that.
+# - Review: passes on either of two sources. Which reviewer a repo uses, and in what order, is the
+#   adapter's call, not this script's.
+#   - Codex: the summary marker comment exists and every row of its table says Completed. The bot
+#     reviews when a PR opens, is marked ready, or is asked to (@codex review), not on every
+#     push. A summary that's posted but not Completed means the review is still running, and that
+#     blocks even if the other source passes.
+#   - Orchestrator comment: the other-family review is a comment the orchestrator posts with
+#     post-review.sh, from the account gh is signed in as. The newest such comment naming the
+#     head sha decides: it passes at "Open findings: 0". The comment has to start with the
+#     "Other-family review" line and carry full-sha, Reviewer and Open findings lines, the shape
+#     post-review.sh writes. A comment that names an older sha is stale (a push landed after the
+#     review). Comments from anyone else are ignored, so nobody else can forge a pass.
+#     A comment on the head with open findings blocks even when the other source passes.
+# - Findings: every inline thread Codex started that is still unresolved, whichever source passed.
+#   An outdated one (a push changed the commented lines) is flagged, not dropped: GitHub marks a
+#   thread outdated whether or not the push fixed it, and the bot doesn't re-review, so a thread
+#   only clears when someone verifies the fix (or that the finding isn't real) and resolves it.
+#   Each finding carries its thread id for resolve-thread.sh, which is the narrow way to do that.
 # - The bot is matched by exact login and the Bot account type, so a lookalike account can't forge
 #   the summary or a finding.
 
@@ -45,7 +56,20 @@ name="${repo#*/}"
 # gojq (inside gh --jq) prints strings raw; each output line is TAB-separated, with no empty fields.
 pr_jq='
 def codex: .author.__typename == "Bot" and .author.login == "'"$CODEX_LOGIN"'";
-.data.repository.pullRequest
+def line($re): map(select(test($re))) | .[0];
+def review:
+  (.body | split("\n")) as $l
+  | ($l | line("^Reviewed sha: [0-9a-f]{40}[ ]*$")) as $s
+  | ($l | line("^Open findings: [0-9]+[ ]*$")) as $o
+  | ($l | line("^Reviewer: [^ ].*$")) as $r
+  | if $l[0] != "Other-family review" or $s == null or $o == null or $r == null then empty
+    else {sha: ($s | capture("(?<x>[0-9a-f]{40})").x),
+          open: ($o | capture("(?<n>[0-9]+)").n | tonumber),
+          who: ($r | sub("^Reviewer: "; "") | sub("[ ]+$"; ""))}
+    end;
+.data.viewer.login as $me
+| .data.repository.pullRequest
+| .headRefOid as $head
 | "head\t\(.headRefOid)",
   "state\t\(.state)",
   "draft\t\(.isDraft)",
@@ -55,6 +79,11 @@ def codex: .author.__typename == "Bot" and .author.login == "'"$CODEX_LOGIN"'";
       else (.body | split("\n") | map(select(startswith("| ") and contains("**")))) as $rows
         | "summary\t\(if ($rows | length) > 0 and ($rows | all(contains("**Completed**"))) then "complete" else "running" end)\t\(([$rows[] | capture("`(?<s>[0-9a-f]{7,40})`") | .s] | last) // "-")"
       end ),
+  ( [.comments.nodes[] | select(.author.login == $me) | review] as $revs
+    | ([$revs[] | select(.sha == $head)] | last) as $cur
+    | if $cur != null then "review\tcurrent\t\($cur.sha[0:10])\t\($cur.open)\t\($cur.who)"
+      elif ($revs | length) > 0 then "review\tstale\t\($revs | last | .sha[0:10])\t0\t-"
+      else "review\tnone\t-\t0\t-" end ),
   "threads\t\(.reviewThreads.pageInfo.hasNextPage)",
   ( .reviewThreads.nodes[]
     | select((.isResolved | not) and (.comments.nodes[0] | codex))
@@ -64,6 +93,7 @@ def codex: .author.__typename == "Bot" and .author.login == "'"$CODEX_LOGIN"'";
 
 pr_query='
 query($owner: String!, $name: String!, $num: Int!) {
+  viewer { login }
   repository(owner: $owner, name: $name) {
     pullRequest(number: $num) {
       state isDraft mergeable mergeStateStatus headRefOid
@@ -83,6 +113,7 @@ pr_lines=$(gh api graphql -f owner="$owner" -f name="$name" -F num="$pr" -f quer
   || die "can't read PR #$pr in $repo"
 
 head_sha="" pr_state="" is_draft="" mergeable="" merge_state="" summary="none" summary_sha="-" threads_more="false"
+rev_state="none" rev_sha="-" rev_open=0 rev_who="-" review_blocked="" comment_why=""
 findings=""
 finding_count=0
 while IFS=$'\t' read -r key f1 f2 f3 f4; do
@@ -92,6 +123,7 @@ while IFS=$'\t' read -r key f1 f2 f3 f4; do
     draft) is_draft="$f1" ;;
     merge) mergeable="$f1" merge_state="$f2" ;;
     summary) summary="$f1" summary_sha="$f2" ;;
+    review) rev_state="$f1" rev_sha="$f2" rev_open="$f3" rev_who="$f4" ;;
     threads) threads_more="$f1" ;;
     finding)
       finding_count=$((finding_count + 1))
@@ -158,17 +190,36 @@ else
   draft_out="no"
 fi
 
+codex_ok=0
 case "$summary" in
-  complete) summary_out="posted, completed on ${summary_sha}" ;;
-  running)
-    summary_out="posted, not marked Completed"
-    ready=0
-    ;;
-  *)
-    summary_out="not posted"
-    ready=0
-    ;;
+  complete) codex_ok=1 ;;
+  running) review_blocked="codex review still running" ;;
 esac
+
+comment_ok=0
+case "$rev_state" in
+  current)
+    if [ "$rev_open" -eq 0 ]; then
+      comment_ok=1
+    else
+      comment_why="${rev_open} open on ${rev_sha} by ${rev_who}"
+      review_blocked="$comment_why"
+    fi
+    ;;
+  stale) comment_why="stale (reviewed ${rev_sha}, head moved)" ;;
+esac
+
+if [ -n "$review_blocked" ]; then
+  review_out="$review_blocked"
+  ready=0
+elif [ "$codex_ok" -eq 1 ]; then
+  review_out="codex summary completed on ${summary_sha}"
+elif [ "$comment_ok" -eq 1 ]; then
+  review_out="comment on ${rev_sha} by ${rev_who}, 0 open"
+else
+  review_out="${comment_why:-not posted}"
+  ready=0
+fi
 
 if [ "$threads_more" = "true" ]; then
   findings_out="unknown (more than 100 review threads)"
@@ -194,8 +245,8 @@ fi
 echo "head: $head_sha"
 echo "ci: $ci_out"
 echo "draft: $draft_out"
-echo "codex summary: $summary_out"
-echo "codex findings: $findings_out"
+echo "review: $review_out"
+echo "findings: $findings_out"
 echo "mergeable: $merge_out"
 
 [ "$ready" -eq 1 ]
