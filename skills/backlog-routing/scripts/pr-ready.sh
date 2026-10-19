@@ -11,8 +11,8 @@
 # What counts, and why:
 # - CI: the newest check run per check name on the head sha (a re-run replaces the run it
 #   re-ran), plus commit statuses. No checks reported yet is pending, not a pass or a failure.
-# - Review: passes on either of two sources, since Antigravity stands in only when the Codex bot
-#   isn't available.
+# - Review: passes on either of two sources. Which reviewer a repo uses, and in what order, is the
+#   adapter's call, not this script's.
 #   - Codex: the summary marker comment exists and every row of its table says Completed. The bot
 #     reviews when a PR opens, is marked ready, or is asked to (@codex review), not on every
 #     push. A summary that's posted but not Completed means the review is still running, and that

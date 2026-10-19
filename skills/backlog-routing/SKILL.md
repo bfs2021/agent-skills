@@ -188,22 +188,21 @@ Runs on each batch PR once CI is green on its head.
    - the seat `route` picks for the code review phase, which must not be the family that wrote
      the batch
    - a second reviewer the adapter names. It can be a bot the repo already runs (the Codex bot,
-     say), or the other-family seat itself. A seat stands in when the bot isn't available (out of
-     quota, say), and then nothing posts on its own: the orchestrator sends it a read-only review
-     brief naming the PR and head sha, and the reviewer writes its findings somewhere the
-     orchestrator can read.
+     say), or a seat the orchestrator drives, in which case nothing posts on its own: the
+     orchestrator sends it a read-only review brief naming the PR and head sha, and the reviewer
+     writes its findings somewhere the orchestrator can read. The adapter also says which to use
+     when more than one is available, and what to do when one can't run.
 
    When no other-family seat is routed for review, the adapter's reviewer is the second family on
    its own, as long as it isn't the family writing the lanes. A review of the head has to exist: a
-   missing one means the gate hasn't passed. For a bot, the adapter says how long to wait, and if
-   it never posts or can't run, the stand-in seat reviews instead. If that can't run either, the PR
-   goes to the human with "other-family review missing" on its queue line.
+   missing one means the gate hasn't passed. For a bot, the adapter says how long to wait. If no
+   reviewer can run, the PR goes to the human with "other-family review missing" on its queue line.
 
    Security, concurrency, and architectural diffs get the table's escalation seat.
 2. Verify every finding yourself before relaying it. Check that it still applies at the PR head,
    since the lane may already have fixed it. Relay only real findings to the batch, which fixes
    them and pushes. Then record the outcome, by who wrote the review:
-   - **Orchestrator-posted review** (the stand-in seat). Post the verified findings and the sha you
+   - **Orchestrator-posted review** (a seat the orchestrator drives). Post the verified findings and the sha you
      reviewed as one PR comment with `scripts/post-review.sh <pr> <sha> <open> <reviewer>`, the
      findings on stdin. It refuses a sha that isn't the current head. `<open>` is how many still
      need a fix. A fix push makes the comment stale, so the next round posts a new one, and the
