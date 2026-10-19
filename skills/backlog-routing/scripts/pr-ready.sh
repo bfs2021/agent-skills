@@ -23,6 +23,7 @@
 #     "Other-family review" line and carry full-sha, Reviewer and Open findings lines, the shape
 #     post-review.sh writes. A comment that names an older sha is stale (a push landed after the
 #     review). Comments from anyone else are ignored, so nobody else can forge a pass.
+#     A comment on the head with open findings blocks even when the other source passes.
 # - Findings: every inline thread Codex started that is still unresolved, whichever source passed.
 #   An outdated one (a push changed the commented lines) is flagged, not dropped: GitHub marks a
 #   thread outdated whether or not the push fixed it, and the bot doesn't re-review, so a thread
@@ -202,6 +203,7 @@ case "$rev_state" in
       comment_ok=1
     else
       comment_why="${rev_open} open on ${rev_sha} by ${rev_who}"
+      review_blocked="$comment_why"
     fi
     ;;
   stale) comment_why="stale (reviewed ${rev_sha}, head moved)" ;;
