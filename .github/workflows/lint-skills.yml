@@ -11,3 +11,4 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: python3 .github/scripts/lint-skills.py
+      - run: python3 .github/scripts/eval-triggers.py
