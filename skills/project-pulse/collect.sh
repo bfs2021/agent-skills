@@ -11,7 +11,8 @@ root="${root%/}"
 shift $(( $# > 0 ? 1 : 0 ))
 
 for gitdir in "$root"/*/.git "$root"/*/*/.git; do
-  [ -e "$gitdir" ] || continue
+  # A linked worktree has a .git file, not a directory. Skip it: its repo is listed already.
+  [ -d "$gitdir" ] || continue
   repo="${gitdir%/.git}"
   rel="${repo#"$root"/}"
   skipped=""
