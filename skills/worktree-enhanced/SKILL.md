@@ -154,8 +154,8 @@ npm run dev
 # Run tests (don't kill the dev server!)
 npm test
 
-# Create PR when ready
-gh pr create --fill
+# Create PR when ready: fill the repo's PR template, don't use --fill
+gh pr create --body-file [filled-pr-template.md]
 ```
 ```
 
