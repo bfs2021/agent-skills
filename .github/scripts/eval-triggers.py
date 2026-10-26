@@ -64,6 +64,10 @@ def main():
     for n, line in enumerate((ROOT / "evals" / "triggers.tsv").read_text().splitlines(), 1):
         if not line.strip() or line.startswith("#"):
             continue
+        if "\t" not in line:
+            print(f"triggers.tsv:{n}: expected skill<TAB>prompt")
+            setup_errors += 1
+            continue
         skill, prompt = line.split("\t", 1)
         neg = skill.startswith("-")
         name = skill.lstrip("-")
