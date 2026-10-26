@@ -58,6 +58,7 @@ def main():
         return sorted(scores.items(), key=lambda kv: (-kv[1], kv[0]))
 
     fails = total = 0
+    covered = set()
     for n, line in enumerate((ROOT / "evals" / "triggers.tsv").read_text().splitlines(), 1):
         if not line.strip() or line.startswith("#"):
             continue
@@ -71,12 +72,23 @@ def main():
         total += 1
         ranked = rank(prompt)
         top = ranked[0][0]
-        ok = (top != name) if neg else (top == name)
+        firsts = {k for k, v in ranked if v == ranked[0][1]}
+        if ranked[0][1] == 0:
+            ok = False
+        elif neg:
+            ok = name not in firsts
+        else:
+            ok = firsts == {name}
         if not ok:
             fails += 1
             print(f"MISS triggers.tsv:{n}: {'not ' if neg else ''}{name} <- {prompt!r} (got {top}, then {ranked[1][0]})")
         elif verbose:
             print(f"ok   {skill}: {prompt}")
+        if not neg:
+            covered.add(name)
+    for missing in sorted(set(descs) - covered):
+        print(f"no positive eval for skill {missing!r}")
+        fails += 1
     print(f"{total - fails}/{total} trigger evals pass")
     return 1 if fails else 0
 

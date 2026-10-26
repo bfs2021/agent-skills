@@ -60,3 +60,34 @@ evidence-check	how do you know that, show your work
 test-workflow	run the right tests before I commit
 drupal-mental-model	explain this code in Drupal terms
 cyoa	make this task a choose your own adventure
+cyoa	turn this refactor into a branching story where I pick the choices
+drupal-mental-model	what's the Drupal equivalent of a React hook
+ds-guard	check this className change against the design system
+evidence-check	prove it, what's your source for that claim
+github-screenshot	attach a screenshot to this issue
+pr-review-fix-pipeline	auto-fix the PR review findings
+project-bootstrap	stamp a CLAUDE.md in this new repo
+skill-parity	push my skills to all providers
+test-fix	fix the broken tests, assertions are failing
+test-workflow	run the unit suite after editing src before commit
+visual-crawl	screenshot visual issues at random breakpoints
+-doc-rot	cut the jargon and wordy sentences from the docs
+-doc-rot	too many comments in this file
+-comment-reaper	are the docs still current
+-comment-reaper	this copy sounds like AI wrote it
+-plain-language-audit	are the docs still current
+-plain-language-audit	remove comments that restate the code
+-dead-code-cleanup	our tests don't actually test anything
+-test-reaper	find unused exports we can delete
+-test-fix	write the tests first then implement
+-tdd-implement	the tests are failing
+-visual-crawl	nightly visual QA that files issues
+-visual-qa-pipeline	crawl the site for visual bugs at different breakpoints
+-ship-issue	spec out issue 42 before I start
+-analyze-issue	take issue 17 all the way to merge
+-prioritize-issues	tidy the backlog labels
+-issue-maintenance	what should I work on next
+-code-health-audit	find duplication worth extracting into a helper
+-abstraction-finder	tech debt sweep of this repo
+-band-aid-finder	remove dead code
+-kiss	run an overengineering sweep
