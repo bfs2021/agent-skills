@@ -73,6 +73,8 @@ The `description` field is what the agent reads to decide whether to invoke the 
 
 Keep descriptions short: what the skill does, when to use it, and three or four trigger phrases. Claude Code caps the total size of its skill list, so long descriptions push other skills out of it, and routing notes like "not for X, use Y" belong in the body. CI runs `.github/scripts/lint-skills.py`, which fails on a description over 400 characters, a `name` that doesn't match its folder, a skill missing from `marketplace.json` or this README, or an absolute `/Users/` path.
 
+After changing a description, run `python3 .github/scripts/eval-triggers.py`. It checks the prompts in `evals/triggers.tsv` (one `skill<TAB>prompt` per line; a leading `-` means that skill must not win) against every description. It's a word-overlap proxy, not the real router, so it catches a dropped trigger phrase but not a subtle misroute. CI runs it too, and it fails when a skill has no line in the file, so a new skill needs at least one request that should pick it. Add a line when a skill misfires.
+
 ## Install
 
 Each agent looks for skills in a specific directory. Copy or symlink the skill folder (the whole thing, not just `SKILL.md`) into the right path for whichever tool you're using.

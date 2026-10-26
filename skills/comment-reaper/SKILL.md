@@ -3,7 +3,7 @@ name: comment-reaper
 description: >
   Finds and removes comments that add nothing: ones that restate the code, cite issue numbers,
   narrate refactor history, or pad a one-liner with JSDoc. Keeps the WHY comments. Trigger on:
-  "reap comments", "remove unnecessary comments", "too many comments", "comment audit".
+  "reap comments", "remove unnecessary comments", "too many comments", "comment audit", "strip redundant JSDoc".
 ---
 
 # Comment Reaper
