@@ -26,10 +26,12 @@ def words(text):
 
 
 def stem(w):
-    for suf in ("ing", "es", "s", "ed"):
-        if w.endswith(suf) and len(w) - len(suf) >= 3:
-            return w[: -len(suf)]
-    return w
+    for suf in ("ing", "ed", "s"):
+        if w.endswith(suf) and not w.endswith("ss") and len(w) - len(suf) >= 3:
+            w = w[: -len(suf)]
+            break
+    # Drop a trailing silent e so issue/issues and merge/merged land on the same stem.
+    return w[:-1] if w.endswith("e") and len(w) > 3 else w
 
 
 def tokens(text):
@@ -57,7 +59,7 @@ def main():
         scores = {n: sum(idf[t] * math.sqrt(c[t]) for t in q if t in c) for n, c in docs.items()}
         return sorted(scores.items(), key=lambda kv: (-kv[1], kv[0]))
 
-    fails = total = 0
+    misses = total = setup_errors = 0
     covered = set()
     for n, line in enumerate((ROOT / "evals" / "triggers.tsv").read_text().splitlines(), 1):
         if not line.strip() or line.startswith("#"):
@@ -66,8 +68,8 @@ def main():
         neg = skill.startswith("-")
         name = skill.lstrip("-")
         if name not in descs:
-            print(f"triggers.tsv:{n}: unknown skill {name!r}")
-            fails += 1
+            print(f"triggers.tsv:{n}: unknown skill {name!r}; fix the name or delete the line")
+            setup_errors += 1
             continue
         total += 1
         ranked = rank(prompt)
@@ -80,17 +82,17 @@ def main():
         else:
             ok = firsts == {name}
         if not ok:
-            fails += 1
+            misses += 1
             print(f"MISS triggers.tsv:{n}: {'not ' if neg else ''}{name} <- {prompt!r} (got {top}, then {ranked[1][0]})")
         elif verbose:
             print(f"ok   {skill}: {prompt}")
         if not neg:
             covered.add(name)
     for missing in sorted(set(descs) - covered):
-        print(f"no positive eval for skill {missing!r}")
-        fails += 1
-    print(f"{total - fails}/{total} trigger evals pass")
-    return 1 if fails else 0
+        print(f"no eval for skill {missing!r}: add a line to evals/triggers.tsv as `{missing}<TAB>a request that should pick it`")
+        setup_errors += 1
+    print(f"{total - misses}/{total} trigger evals pass")
+    return 1 if misses or setup_errors else 0
 
 
 if __name__ == "__main__":
