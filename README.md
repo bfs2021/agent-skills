@@ -34,7 +34,7 @@ Grouped by type. Each links to its `SKILL.md`.
 
 ### Cleanup — code, comments, docs, prose
 
-- **[dead-code-cleanup](skills/dead-code-cleanup/SKILL.md)** — Find and remove orphaned code, stale stories, and trivial tests after verifying nothing uses them.
+- **[dead-code-cleanup](skills/dead-code-cleanup/SKILL.md)** — Find and remove orphaned code, files, and stale stories after verifying nothing uses them.
 - **[comment-reaper](skills/comment-reaper/SKILL.md)** — Remove unnecessary comments — the ones that restate the code — after reading the code under each to confirm it's redundant, not load-bearing.
 - **[doc-rot](skills/doc-rot/SKILL.md)** — Sniff out stale docs, comments, docstrings, and commented-out code. Grounds every staleness call against the actual code, auto-fixes the safe rot, surfaces judgment calls.
 - **[plain-language-audit](skills/plain-language-audit/SKILL.md)** — Sweep comments, docs, and UI copy for jargon, AI writing tells, and verbosity. Auto-fixes the unambiguous stuff, surfaces judgment calls.
