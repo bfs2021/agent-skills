@@ -1,702 +1,240 @@
 ---
 name: dead-code-cleanup
 description: >
-  Finds and removes dead or orphaned code, tests, and Storybook stories, including trivial tests
-  that prove nothing. Validates that code is truly unused before deleting anything. Trigger on:
-  "remove dead code", "find unused exports", "what code can we delete", "prune the repo".
+  Finds and removes dead or orphaned code, files, and Storybook stories. Validates that code is
+  truly unused before deleting anything. Trigger on: "remove dead code", "find unused exports",
+  "what code can we delete", "prune the repo".
 ---
 
 # Dead Code Cleanup
 
 ## Overview
 
-Systematically identifies dead, orphaned, and trivial code across the codebase including components, tests, and Storybook stories. Validates that code is truly unused before removal to prevent breaking changes. Also removes stories that provide no documentation value or only demonstrate rare edge cases.
+Finds code, files, and stories whose subject is gone or that nothing uses, and removes them only after proving nothing depends on them. Validate first, delete second.
 
-## What Qualifies as Dead/Trivial Code
+Trivial or weak tests (snapshot-only, `renders without crashing`, `toBeDefined`, duplicates, negative reference scans) belong to `test-reaper`. This skill only removes a test when its subject is gone (an orphaned test).
 
-### Dead/Orphaned Code
-- **Components never imported** - React components with no imports anywhere
-- **Unused utilities** - Functions/modules with no consumers
-- **Orphaned tests** - Tests for deleted/moved components
-- **Orphaned stories** - Storybook stories for deleted/moved components
-- **Commented-out code** - Code blocks that have been commented out
-- **Debug code** - Console logs, debug flags, temporary test utilities
+## What Qualifies
 
-### Trivial Tests
-- **Tests that always pass** - Tests with no real assertions or mocked to always succeed
-- **Empty render tests** - Tests that only verify component renders without crashing
-- **Pointless existence tests** - Tests that check if a component is defined
-- **Snapshot-only tests** - Tests with only snapshots and no behavior validation
-- **Duplicate tests** - Multiple tests checking the same exact behavior
-- **Negative reference guards** - Tests that read docs/source/CSS/config and only assert a removed string, selector, key, or literal is absent
-
-### Trivial Storybook Stories
-- **No-value stories** - Stories that show the exact same thing as another story
-- **Default-only stories** - Stories that only render component with no props (when default story exists)
-- **Edge case stories** - Stories demonstrating extremely rare scenarios unlikely to occur
-- **Duplicate states** - Multiple stories showing identical visual states
-- **Over-specification stories** - Stories for every tiny prop variation that adds no documentation value
-- **Obvious behavior stories** - Stories showing behavior that's self-evident from the component
-
-**Examples of trivial stories to remove**:
-```typescript
-// ❌ Trivial - just default with no props (when Default story exists)
-export const Empty: Story = {
-  args: {},
-};
-
-// ❌ Trivial - rare edge case nobody will encounter
-export const WithExactly47Characters: Story = {
-  args: {
-    text: "This string has exactly forty-seven chars!",
-  },
-};
-
-// ❌ Trivial - duplicate of existing state
-export const LoadingState: Story = {
-  args: { loading: true },
-};
-export const IsLoading: Story = {  // Duplicate!
-  args: { loading: true },
-};
-
-// ❌ Trivial - no documentation value
-export const WithPadding5: Story = {
-  args: { padding: 5 },
-};
-export const WithPadding6: Story = {
-  args: { padding: 6 },
-};
-export const WithPadding7: Story = {
-  args: { padding: 7 },
-};
-
-// ✅ Keep - demonstrates important state
-export const ErrorState: Story = {
-  args: {
-    error: "Failed to load data",
-    onRetry: fn(),
-  },
-};
-
-// ✅ Keep - shows important variant
-export const WithLongContent: Story = {
-  args: {
-    children: "Very long content that tests text wrapping...",
-  },
-};
-```
-
-### Trivial Other Code
-- **Empty functions** - Functions that do nothing or only return undefined
-- **Duplicate implementations** - Multiple versions of the same functionality
+### Dead/orphaned code
+- **Components never imported** - no imports anywhere
+- **Unused utilities** - functions/modules with no consumers
 - **Unused types/interfaces** - TypeScript definitions with no references
+- **Duplicate implementations** - several versions of the same functionality
+- **Empty functions** - do nothing or only return undefined
+- **Commented-out code** - blocks that have been commented out
+- **Debug code** - console logs, debug flags, temporary utilities
+- **Orphaned tests and stories** - for components that were deleted or moved
 
-## Detection Strategy
+### Trivial Storybook stories
+- **Duplicate states** - two stories showing the identical state
+- **Default-only stories** - `args: {}` when a Default story exists
+- **Edge case stories** - contrived scenarios nobody will hit (exactly 47 characters)
+- **Micro-variations** - a story per prop value (padding 5, 6, 7)
+- **Obvious behavior** - self-evident from the component
 
-### Phase 1: Identify Candidates
-
-**For Components**:
-```bash
-# Find all component files
-find src/components -name "*.tsx" -o -name "*.ts"
-
-# For each component, check for imports
-grep -r "import.*ComponentName" src/
-grep -r "from.*path/to/component" src/
-```
-
-**For Tests**:
-```bash
-# Find all test files
-find . -name "*.test.ts" -o -name "*.test.tsx"
-
-# For each test, verify the tested file exists
-# Check if test is testing actual behavior (not just rendering)
-```
-
-**For Storybook Stories**:
-```bash
-# Find all story files
-find . -name "*.stories.tsx" -o -name "*.stories.ts"
-
-# For each story:
-# 1. Verify the component exists (orphaned check)
-# 2. Check if story provides meaningful documentation
-# 3. Look for duplicate states
-# 4. Identify edge case stories
-```
-
-### Phase 2: Validation
-
-**Before marking as dead, verify**:
-1. No direct imports in src/
-2. No dynamic imports (e.g., React.lazy, import())
-3. Not exported from index files
-4. Not used in type definitions
-5. Not referenced in configuration files
-6. Not used in Storybook stories
-7. Not referenced in documentation
-
-**For tests, verify they're trivial**:
 ```typescript
-// Trivial test patterns
-❌ test('renders without crashing', () => { render(<Component />) })
-❌ test('exists', () => { expect(Component).toBeDefined() })
-❌ test('has correct snapshot', () => { expect(tree).toMatchSnapshot() })
-❌ test('renders', () => { render(<Component />); expect(screen.getByRole('button')).toBeInTheDocument() })
-❌ test('does not reference removed template step', () => {
-  const content = fs.readFileSync('docs/world.md', 'utf8')
-  expect(content).not.toMatch(/Template step/)
-})
-❌ test('does not carry the retired selector', () => {
-  const css = fs.readFileSync('app.css', 'utf8')
-  expect(css).not.toMatch(/\.old-selector/)
-})
+// Remove: empty args when Default exists
+export const Empty: Story = { args: {} };
 
-// Non-trivial tests
-✅ test('displays error when validation fails', () => { ... })
-✅ test('submits form with correct data', () => { ... })
-✅ test('calls callback when button clicked', () => { ... })
-✅ test('redacts the provider key from outgoing requests', () => { ... })
+// Remove: contrived edge case
+export const WithExactly47Characters: Story = {
+  args: { text: "This string has exactly forty-seven chars!" },
+};
+
+// Remove: duplicate of LoadingState
+export const IsLoading: Story = { args: { loading: true } };
+
+// Remove: micro-variations (keep one or two examples at most)
+export const WithPadding5: Story = { args: { padding: 5 } };
+export const WithPadding6: Story = { args: { padding: 6 } };
+
+// Keep: demonstrates an important state
+export const ErrorState: Story = {
+  args: { error: "Failed to load data", onRetry: fn() },
+};
 ```
-
-**For stories, verify they're trivial**:
-```typescript
-// Read the story file and check:
-// 1. Does it duplicate another story's state?
-// 2. Is it an edge case (e.g., exactly N characters, rare prop combination)?
-// 3. Does it show obvious behavior?
-// 4. Is it just testing every prop value without value?
-
-// Compare stories:
-const stories = extractStoriesFromFile(file);
-const duplicates = findDuplicateStates(stories);
-const edgeCases = findEdgeCaseStories(stories);
-const noValue = findNoValueStories(stories);
-```
-
-### Phase 3: Categorization
-
-**Organize findings by confidence level**:
-
-**High confidence (safe to remove)**:
-- No imports found anywhere
-- File created but never used
-- Test for deleted component
-- Story for deleted component
-- Commented-out code blocks
-- Stories that exactly duplicate existing stories
-- Tests that only check rendering with no assertions
-
-**Medium confidence (needs review)**:
-- Only imported in other dead code
-- Only used in development/test environments
-- Trivial tests that could be replaced
-- Duplicate implementations
-- Stories showing edge cases or minor variations
-- Stories with questionable documentation value
-
-**Low confidence (keep or investigate)**:
-- Used in generated code
-- Dynamic imports possible
-- Part of public API
-- Referenced in documentation
-- Stories that might demonstrate important variants
 
 ## Story Value Assessment
 
-### Questions to Ask
+Ask of each story:
 
-**For each Storybook story, evaluate**:
+1. Does it show a distinct visual state? (error vs success vs loading: yes; padding 5 vs 6: no)
+2. Would a developer need to see it? (interactive states, validation, responsive behavior: yes)
+3. Does it document important behavior?
+4. Is another story already covering it?
+5. Is it a realistic use case?
 
-1. **Does it show a distinct visual state?**
-   - ✅ Keep: Shows error state vs success state vs loading state
-   - ❌ Remove: Shows padding: 5 vs padding: 6 vs padding: 7
+Keep stories with play functions, decorators, or meaningful parameters (viewport, theme, background), even if the args look simple. Keep stories added for a real regression, stories referenced in docs, foundation stories others build on, and size or color variants in a design system where the full set is the documentation. When unsure if a story has value, ask.
 
-2. **Would a developer need to see this?**
-   - ✅ Keep: Interactive states, error handling, edge cases that matter
-   - ❌ Remove: Every possible prop combination, trivial variations
+## Detection
 
-3. **Does it document important behavior?**
-   - ✅ Keep: Form validation, disabled states, responsive behavior
-   - ❌ Remove: Component with exactly 47 characters of text
+### Phase 1: Find candidates
 
-4. **Is it already covered by another story?**
-   - ✅ Keep: First story showing this state
-   - ❌ Remove: Duplicate stories showing identical states
+```bash
+# Components with no imports
+for file in $(find src/components -name "*.tsx" ! -name "*.test.tsx" ! -name "*.stories.tsx"); do
+  name=$(basename "$file" .tsx)
+  imports=$(grep -r "import.*$name" src/ | wc -l)
+  [ "$imports" -eq 0 ] && echo "No imports: $file"
+done
 
-5. **Is this a realistic use case?**
-   - ✅ Keep: Common scenarios developers will encounter
-   - ❌ Remove: Contrived edge cases unlikely to happen
+# Orphaned tests and stories: does the subject still exist?
+find . -name "*.test.ts*" -o -name "*.stories.ts*"
 
-### Story Cleanup Patterns
+# Suspect stories
+grep -r "export const Empty" --include="*.stories.tsx" .
+grep -r "args: {}" --include="*.stories.tsx" .
+grep -rE "With[0-9]+|WithExactly" --include="*.stories.tsx" .
 
-**Common trivial story patterns**:
-```typescript
-// Pattern 1: Duplicate states
-export const Loading = { args: { isLoading: true } };
-export const IsLoading = { args: { isLoading: true } };  // ❌ Remove
+# Over-specified story files (many exports)
+for file in $(find . -name "*.stories.tsx"); do
+  count=$(grep -c "^export const.*Story" "$file")
+  [ "$count" -gt 10 ] && echo "Many stories ($count): $file"
+done
 
-// Pattern 2: Micro-variations
-export const Small = { args: { size: 'sm' } };
-export const SmallWithPadding = { args: { size: 'sm', padding: 2 } };  // ❌ Remove if not meaningful
-
-// Pattern 3: Edge cases
-export const With99Items = { args: { items: Array(99).fill({}) } };  // ❌ Remove (why 99?)
-
-// Pattern 4: Every prop value
-export const RedButton = { args: { color: 'red' } };
-export const BlueButton = { args: { color: 'blue' } };
-export const GreenButton = { args: { color: 'green' } };
-// ❌ Keep one or two examples, remove the rest
-
-// Pattern 5: No-value empty states
-export const Empty = { args: {} };  // ❌ Remove if Default exists
+# Debug leftovers
+grep -r "console.log" src/ | grep -v ".test." | grep -v "// DEBUG:"
+grep -r "debugger;" src/
+grep -r "DEBUG.*=.*true" src/
 ```
 
-**Keep these valuable stories**:
-```typescript
-// ✅ Shows important interactive state
-export const WithValidationError: Story = {
-  args: {
-    error: "Email is required",
-    touched: true,
-  },
-};
+### Phase 2: Validate before marking dead
 
-// ✅ Demonstrates realistic use case
-export const LongFormWithManyFields: Story = {
-  args: {
-    fields: realisticFormFields,
-  },
-};
+For each candidate, check all of these:
 
-// ✅ Shows responsive behavior
-export const MobileLayout: Story = {
-  parameters: {
-    viewport: { defaultViewport: 'mobile1' },
-  },
-};
+1. No direct imports in `src/`
+2. No dynamic imports (`React.lazy`, `import()`)
+3. Not re-exported from index files
+4. Not used in type definitions
+5. Not referenced in config files (package.json, next.config.js, etc.)
+6. Not used in Storybook stories
+7. Not referenced in docs
+8. No string references: `grep -r "ComponentName" src/`
 
-// ✅ Documents complex interaction
-export const WithAsyncValidation: Story = {
-  args: {
-    onValidate: async (value) => { /* realistic validation */ },
-  },
-  play: async ({ canvasElement }) => {
-    // Demonstrates the interaction
-  },
-};
-```
+### Phase 3: Categorize
+
+**High confidence (safe to remove)**
+- No imports anywhere
+- Test or story for a deleted component
+- Commented-out code blocks
+- Stories that exactly duplicate another story
+
+**Medium confidence (needs review)**
+- Only imported by other dead code
+- Only used in dev/test environments
+- Duplicate implementations (keep the best one)
+- Stories showing minor variations or edge cases
+
+**Low confidence (keep or investigate)**
+- Used in generated code
+- Possible dynamic imports
+- Part of a public API
+- Referenced in docs
+- Stories that might demonstrate important variants
 
 ## Removal Process
 
-### Step 1: Create Removal Plan
+### Step 1: Write the plan
 
-Document all findings:
 ```markdown
 ## Dead Code Findings
 
-### High Confidence (Safe to Remove)
-- [ ] `src/components/OldButton.tsx` - No imports, replaced by shadcn Button
-- [ ] `src/components/__tests__/OldButton.test.tsx` - Test for removed component
-- [ ] `src/stories/OldButton.stories.tsx` - Story for removed component
+### High Confidence
+- [ ] `src/components/OldButton.tsx` - no imports, replaced by shadcn Button
+- [ ] `src/components/__tests__/OldButton.test.tsx` - test for removed component
+- [ ] `src/stories/OldButton.stories.tsx` - story for removed component
 
-### Trivial Tests to Remove
-- [ ] `Component.test.tsx:15-18` - "renders without crashing" test
-- [ ] `Component.test.tsx:20-23` - Empty snapshot test
-- [ ] `Form.test.tsx:45-48` - Duplicate of existing test
-
-### Trivial Stories to Remove
-- [ ] `Button.stories.tsx` - "Empty" story (duplicates Default)
-- [ ] `Button.stories.tsx` - "WithPadding5/6/7" stories (no value)
-- [ ] `Input.stories.tsx` - "With47Characters" story (contrived edge case)
-- [ ] `Card.stories.tsx` - "Loading" and "IsLoading" (duplicates)
+### Stories to Remove
+- [ ] `Button.stories.tsx` - "Empty" (duplicates Default)
+- [ ] `Input.stories.tsx` - "With47Characters" (contrived edge case)
 
 ### Medium Confidence (Review First)
-- [ ] `src/lib/oldDateFormatter.ts` - Only used in dead code
-- [ ] `Dialog.stories.tsx` - "WithCustomZIndex" (edge case?)
+- [ ] `src/lib/oldDateFormatter.ts` - only used in dead code
 ```
 
-### Step 2: Validate with User
+### Step 2: Get approval
 
-**Present findings for approval**:
-```
-Found the following dead/trivial code:
+Present findings by confidence level with file and line counts, then ask before removing anything. Trivial-test findings you notice along the way go in a one-line pointer to `test-reaper`, not in this plan.
 
-High Confidence (3 files, 245 lines):
-- OldButton component and tests (never imported)
-- Legacy date formatter (only used in removed code)
+### Step 3: Remove safely
 
-Trivial Tests (12 tests, 156 lines):
-- 8 "renders without crashing" tests
-- 4 duplicate tests
+Order matters: orphaned tests, orphaned stories, trivial stories, then the implementation last.
 
-Trivial Stories (15 stories, 203 lines):
-- 6 stories showing micro-variations (padding values)
-- 4 duplicate state stories
-- 3 contrived edge case stories
-- 2 empty/default duplicates
+For each removal:
 
-Total potential cleanup: 5 files + 27 test/story removals, 604 lines
-
-Shall I proceed with removal?
-```
-
-### Step 3: Safe Removal
-
-**Remove in order**:
-1. **Trivial tests first** - Remove pointless tests
-2. **Trivial stories second** - Remove no-value stories
-3. **Orphaned tests third** - Remove tests for deleted code
-4. **Orphaned stories fourth** - Remove stories for deleted code
-5. **Implementation last** - Remove actual dead code
-
-**For each removal**:
 ```bash
-# 1. For code: Double-check no imports
+# 1. Double-check references
 grep -r "ComponentName" src/
-
-# 2. For stories: Verify not referenced in docs
 grep -r "story-id" docs/
 
-# 3. Check git history to understand why it existed
+# 2. Check history for why it existed
 git log --all --full-history -- path/to/file.tsx
 
-# 4. Remove file or specific exports
-# Option A: Remove entire file
+# 3. Remove the file, or just the specific export (Edit tool)
 rm path/to/file.tsx
 
-# Option B: Remove specific story/test from file
-# Use Edit tool to remove the export
-
-# 5. Verify build still works
-npm run build
-
-# 6. Verify tests still pass
-npm run test
-
-# 7. Verify Storybook builds
-npm run storybook
+# 4. Verify
+npm run build && npm run test && npm run storybook
 ```
 
-### Step 4: Commit Strategy
+### Step 4: Commit
 
-**Create focused commits**:
+Focused commits by type, so each is easy to review or revert:
+
 ```bash
-# Separate commits for different types
-git commit -m "test: Remove trivial 'renders without crashing' tests"
-git commit -m "test: Remove duplicate test cases"
 git commit -m "docs: Remove trivial Storybook stories with no documentation value"
-git commit -m "docs: Remove edge case stories (WithExactly47Chars, etc)"
 git commit -m "test: Remove orphaned tests for deleted components"
 git commit -m "docs: Remove orphaned Storybook stories"
 git commit -m "refactor: Remove dead OldButton component"
 git commit -m "refactor: Remove debug utilities and commented code"
 ```
 
-## Detection Tools
+## Common Scenarios
 
-### Custom Grep Patterns
-
-**Find components with no imports**:
+**Removed component, orphaned files.** Find the deletion in history, then the leftovers:
 ```bash
-# For each .tsx component file
-for file in $(find src/components -name "*.tsx" ! -name "*.test.tsx" ! -name "*.stories.tsx"); do
-  name=$(basename "$file" .tsx)
-  imports=$(grep -r "import.*$name" src/ | wc -l)
-  if [ "$imports" -eq 0 ]; then
-    echo "No imports: $file"
-  fi
-done
+git log --all --full-history --diff-filter=D -- "**/ComponentName.tsx"
+find . -name "*ComponentName.test.tsx" -o -name "*ComponentName.stories.tsx"
 ```
 
-**Find trivial tests**:
-```bash
-# Search for common trivial test patterns
-grep -r "renders without crashing" src/
-grep -r "toBeDefined()" src/ | grep -i component
-grep -r "toMatchSnapshot()" src/ | grep -v "// meaningful snapshot"
-grep -r "test('renders'" src/
-grep -r "it('renders'" src/
-grep -r "not.toContain\\|not.toMatch" src/ scripts/ __tests__/ tests/ --include="*.test.*" --include="*.spec.*"
-grep -r "readFileSync" src/ scripts/ __tests__/ tests/ --include="*.test.*" --include="*.spec.*"
-```
+**Story file with a mix of good and trivial stories.** Use Edit to remove only the trivial exports (duplicates, micro-variations, contrived edge cases). Keep the ones showing distinct states.
 
-**Find potentially trivial stories**:
-```bash
-# Search for common trivial story patterns
-grep -r "export const Empty" **/*.stories.tsx
-grep -r "args: {}" **/*.stories.tsx
-grep -r "WithExactly" **/*.stories.tsx
-grep -r "With[0-9]+" **/*.stories.tsx
-
-# Find story files with many exports (likely over-specified)
-for file in $(find . -name "*.stories.tsx"); do
-  count=$(grep -c "^export const.*Story" "$file")
-  if [ "$count" -gt 10 ]; then
-    echo "Many stories ($count): $file"
-  fi
-done
-```
-
-**Find orphaned stories**:
-```bash
-# For each story file, check if component exists
-for story in $(find . -name "*.stories.tsx"); do
-  # Extract component import
-  component=$(grep "import.*from" "$story" | grep -v "@" | head -1)
-  # Check if imported file exists
-  # ...validation logic...
-done
-```
+**Duplicate implementations.** Find similar names (`grep -r "export.*formatDate" src/`), compare, keep the best one, repoint callers, remove the rest.
 
 ## Safety Checks
 
-### Before Removing Anything
+**Before removing:** full test suite, build, and Storybook build pass; searched for dynamic imports and string references; checked config files; read the story to make sure you're not losing real documentation.
 
-**Required validations**:
-- [ ] Run full test suite: `npm run test`
-- [ ] Run build: `npm run build`
-- [ ] Check Storybook builds: `npm run storybook`
-- [ ] Search for dynamic imports: `grep -r "import(" src/`
-- [ ] Search for string references: `grep -r "ComponentName" src/`
-- [ ] Check configuration files: package.json, next.config.js, etc.
-- [ ] Review story file to ensure not removing valuable documentation
+**After removing:** tests, build, and Storybook build pass; `npm run type-check` and `npm run lint` are clean (if available); spot-check Storybook to confirm important stories remain.
 
-### After Removal
+## Reporting
 
-**Verification steps**:
-- [ ] All tests pass: `npm run test`
-- [ ] Build succeeds: `npm run build`
-- [ ] Storybook builds: `npm run storybook`
-- [ ] No TypeScript errors: `npm run type-check` (if available)
-- [ ] No ESLint errors: `npm run lint`
-- [ ] Spot-check Storybook to ensure important stories remain
+Track before/after counts (files, lines, stories) and report what was removed:
 
-## Common Scenarios
-
-### Scenario 1: Removed Component with Orphaned Files
-
-**Problem**: Deleted a component but forgot to remove tests/stories
-
-**Solution**:
-```bash
-# Find the component in git history
-git log --all --full-history --diff-filter=D -- "**/ComponentName.tsx"
-
-# Find orphaned test
-find . -name "*ComponentName.test.tsx"
-
-# Find orphaned story
-find . -name "*ComponentName.stories.tsx"
-
-# Remove both
-rm path/to/ComponentName.test.tsx
-rm path/to/ComponentName.stories.tsx
-```
-
-### Scenario 2: Story File with Mix of Good and Trivial Stories
-
-**Problem**: Some stories are valuable, others are trivial variations
-
-**Detection**:
-```typescript
-// src/stories/Button.stories.tsx
-
-// ✅ Keep - shows important states
-export const Default: Story = { args: { children: "Click me" } };
-export const Disabled: Story = { args: { disabled: true } };
-export const Loading: Story = { args: { loading: true } };
-
-// ❌ Remove - trivial variations
-export const WithPadding5: Story = { args: { padding: 5 } };
-export const WithPadding6: Story = { args: { padding: 6 } };
-export const WithPadding7: Story = { args: { padding: 7 } };
-
-// ❌ Remove - duplicate
-export const IsLoading: Story = { args: { loading: true } };  // Same as Loading!
-
-// ❌ Remove - contrived edge case
-export const WithExactly42Characters: Story = {
-  args: { children: "This button has exactly 42 characters!" },
-};
-```
-
-**Action**: Use Edit tool to remove only the trivial exports, keep the valuable ones
-
-### Scenario 3: Trivial Tests Adding No Value
-
-**Problem**: Tests that only check component renders
-
-**Detection**:
-```typescript
-// src/components/__tests__/MyComponent.test.tsx
-
-❌ test('renders without crashing', () => {
-  render(<MyComponent />);
-  // No assertions!
-});
-
-❌ test('component exists', () => {
-  expect(MyComponent).toBeDefined();
-  // Pointless - TypeScript already ensures this
-});
-
-❌ test('renders button', () => {
-  render(<MyComponent />);
-  expect(screen.getByRole('button')).toBeInTheDocument();
-  // Just checking it renders, no behavior tested
-});
-```
-
-**Action**: Remove these tests, ensure meaningful behavior tests remain
-
-### Scenario 4: Duplicate Implementations
-
-**Problem**: Multiple versions of same utility
-
-**Detection**:
-```bash
-# Find similar function names
-grep -r "function formatDate" src/lib/
-grep -r "export.*formatDate" src/
-
-# Compare implementations
-# Keep best one, remove duplicates
-```
-
-### Scenario 5: Debug Code Left Behind
-
-**Problem**: Console.log, debug flags, test utilities in production code
-
-**Detection**:
-```bash
-# Find debug statements
-grep -r "console.log" src/ | grep -v ".test." | grep -v "// DEBUG:"
-grep -r "console.debug" src/
-grep -r "debugger;" src/
-
-# Find debug flags
-grep -r "DEBUG.*=.*true" src/
-grep -r "__DEV__" src/
-```
-
-## Edge Cases to Watch For
-
-### Don't Remove
-
-**Even if looks trivial**:
-- **Stories documenting complex interactions** - Even if props are simple, the play function might demonstrate important behavior
-- **Stories with meaningful parameters** - viewport settings, themes, decorators that show responsive/theme behavior
-- **Edge case stories that match real bugs** - If a story was added to prevent regression of a real issue
-- **Stories referenced in documentation** - Check docs before removing
-- **Foundation stories** - The first story in a file that others reference
-
-### Be Careful With
-
-**Requires extra validation**:
-- **Stories with play functions** - May demonstrate interactions even if args look simple
-- **Stories with decorators** - May show important context/layout
-- **Stories with parameters** - Viewport, theme, background settings provide value
-- **Multiple stories showing size variants** - Keep if sizes are meaningfully different (xs, sm, md, lg, xl)
-- **Stories in design system** - May need to show all color/variant combinations for documentation
-
-## Metrics
-
-### Track Cleanup Impact
-
-**Before cleanup**:
-```bash
-# Count files
-find src -name "*.tsx" -o -name "*.ts" | wc -l
-
-# Count lines of code
-find src -name "*.tsx" -o -name "*.ts" | xargs wc -l | tail -1
-
-# Count test files
-find src -name "*.test.tsx" -o -name "*.test.ts" | wc -l
-
-# Count stories
-find . -name "*.stories.tsx" -exec grep -c "^export const.*Story" {} + | awk '{s+=$1} END {print s}'
-```
-
-**After cleanup, report**:
 ```
 Dead Code Cleanup Results:
-- Removed: 8 files
-- Lines deleted: 1,247
-- Trivial tests removed: 12
-- Trivial stories removed: 23
+- Removed: 8 files, 1,247 lines
 - Orphaned tests removed: 5
 - Orphaned stories removed: 3
-- Build time: 15% faster
-- Bundle size: 8KB smaller
-- Storybook: 23 fewer stories, clearer documentation
+- Trivial stories removed: 23
 ```
 
-## When to Apply This Skill
+## When to Apply
 
-### Automatic triggers:
-- User asks to "clean up dead code"
-- User asks to "remove unused files"
-- User asks to "remove trivial tests"
-- User asks to "remove trivial stories"
-- User mentions "orphaned stories/tests"
-- User asks to clean up Storybook
+Use when the user asks to clean up dead code, remove unused files, prune orphaned tests or stories, or tidy Storybook. Also useful after large refactors, after replacing a major feature, before a release, and during codebase audits.
 
-### Proactive use during:
-- Large refactoring efforts
-- After removing/replacing major features
-- Before major releases
-- During codebase audits
-- After noticing Storybook has too many low-value stories
+Don't use it for small feature changes, new feature work, or when it's unclear whether code is dead or a story has value (ask first).
 
-### Don't use when:
-- Making small feature changes
-- Working on new features
-- User hasn't requested cleanup
-- Unclear if code is truly dead
-- Unclear if story provides value (ask user)
+## Related Skills
 
-## Integration with Other Skills
+- `test-reaper` - trivial, duplicate, and over-mocked tests whose subject still exists
+- `code-health-audit` - broader sweep that defers here for removal mechanics
+- `github-workflow` - clean, focused commits for removals
 
-### Works well with:
-- **software-engineering-best-practices** - Uses same principles for code quality
-- **github-workflow** - Creates clean, focused commits for removals
+## Remember
 
-### Coordinates with:
-- Pattern recognition - Identifies when code was replaced
-- Test quality review - Distinguishes trivial vs valuable tests
-- Refactoring - Often cleanup happens during refactoring
-- Documentation review - Ensures removed stories aren't referenced
-
-## Summary
-
-**Dead Code Cleanup Process**:
-1. **Identify** - Find candidates using grep/find
-2. **Validate** - Verify truly unused/trivial with multiple checks
-3. **Categorize** - High/medium/low confidence
-4. **Get approval** - Present findings to user
-5. **Remove safely** - Trivial tests → Trivial stories → Orphaned files → Dead code
-6. **Verify** - Build, test, Storybook, lint all pass
-7. **Commit** - Focused commits by type
-
-**Story Evaluation Criteria**:
-- Does it show distinct visual state?
-- Would a developer need to see this?
-- Does it document important behavior?
-- Is it already covered by another story?
-- Is this a realistic use case?
-
-**Remember**:
 - Better to keep questionable code than break something
-- Always run full test suite after removal
-- Commit removals separately from feature work
-- Document why code was removed in commit message
-- When unsure if story has value, ask the user
-- Keep stories that demonstrate real use cases
-- Remove stories that are contrived or micro-variations
-
-**The goal**: Clean, maintainable codebase with only code that serves a purpose, properly tested with meaningful tests that validate behavior, and Storybook stories that provide actual documentation value for developers.
+- Always run the full test suite after removal
+- Commit removals separately from feature work, and say why in the message
+- When unsure if a story has value, ask the user

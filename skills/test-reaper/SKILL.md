@@ -11,7 +11,7 @@ description: >
 
 A test suite rots differently than source. Nothing goes red, nothing gets flagged, the count keeps climbing, and confidence quietly decouples from coverage. The tests that hurt most are not the broken ones - they're the ones that pass no matter what you do to the code.
 
-`dead-code-cleanup` already covers the classic markers: snapshot-only tests, `renders without crashing`, `.skip`, orphaned files. In a repo that has been kept up, those all return zero, and the sweep stops there having found nothing. This skill starts where that one runs out.
+`dead-code-cleanup` only removes tests whose subject is gone (orphaned files). This skill owns the classic markers too: snapshot-only tests, `renders without crashing`, `toBeDefined`, `.skip`. In a repo that has been kept up, those all return zero, and a sweep that stops there finds nothing. The sections below go further.
 
 Also watch for a newer kind of dead weight: a test added after deleting stale text/config/CSS that reads a file and asserts the old string is gone. Those tests feel like regression coverage, but most of them only make the deletion permanent in the narrowest possible way. If the old reference comes back, the real question is whether behavior broke; if no behavior is observed, the test is just a grep with a Jest wrapper.
 
