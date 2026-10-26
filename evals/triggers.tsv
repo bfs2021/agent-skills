@@ -1,0 +1,62 @@
+# skill<TAB>prompt. A leading - means the skill must not win. Paraphrase, don't copy the trigger phrases.
+doc-rot	are the docs in this repo still accurate
+doc-rot	the README is stale, can you fix it
+doc-rot	find commented-out code and outdated docstrings
+-doc-rot	remove comments that just restate the code
+comment-reaper	too many pointless comments in this file
+comment-reaper	strip JSDoc that repeats the function name
+comment-reaper	remove comments that restate the code
+plain-language-audit	this copy sounds like AI wrote it
+plain-language-audit	cut the jargon from our docs
+plain-language-audit	the UI text is too wordy
+analyze-issue	spec out issue 42 before I start
+analyze-issue	break this issue down into a plan
+ship-issue	take issue 17 all the way to merge
+ship-issue	do issue 9 end to end
+prioritize-issues	what should I work on next
+prioritize-issues	rank my open issues
+post-merge	I just merged the PR, clean up
+post-merge	PR is merged, what next
+band-aid-finder	am I just treating the symptom here
+band-aid-finder	why does this bug keep coming back
+dead-code-cleanup	find unused exports we can delete
+dead-code-cleanup	what code is orphaned and safe to remove
+test-reaper	our tests don't actually test anything
+test-reaper	too much mocking in the test suite
+test-fix	the tests are failing
+ci-fix-with-memory	CI is red on my PR
+ci-fix-with-memory	GitHub Actions failed
+tdd-implement	build this with red-green-refactor
+tdd-implement	write the tests first then implement
+kiss	trim this diff, it grew past scope
+kiss	give me the smallest possible change
+code-health-audit	what can we simplify, run an overengineering sweep
+code-health-audit	tech debt sweep of this repo
+abstraction-finder	where are we repeating ourselves
+abstraction-finder	find duplication worth extracting into a helper
+worktree-enhanced	set up a worktree for this feature
+worktree-enhanced	start a feature branch in isolation
+wrap-it-up	wrap it up, end of chat
+wrap-it-up	close out this conversation
+route	which model should I use for this
+route	should I switch providers
+backlog-routing	plan the milestone and dispatch batches to agents
+backlog-routing	file issues from my playtest notes
+project-pulse	what is going on across all my projects
+project-pulse	what's stalled across my repos
+project-bootstrap	bootstrap a new project with a CLAUDE.md
+skill-parity	are my skills in sync across providers
+github-screenshot	embed a screenshot in this PR
+issue-maintenance	tidy the backlog labels
+issue-maintenance	re-prioritize open issues
+visual-crawl	crawl the site for visual bugs at different breakpoints
+visual-qa-pipeline	nightly visual QA that files issues
+visual-qa-pipeline	crawl and file issues with screenshots
+browser-debugger-cli	check computed styles on this element
+browser-debugger-cli	query the DOM of the live page
+pr-review-fix-pipeline	review this PR and fix the easy findings
+ds-guard	check this CSS against the design system tokens
+evidence-check	how do you know that, show your work
+test-workflow	run the right tests before I commit
+drupal-mental-model	explain this code in Drupal terms
+cyoa	make this task a choose your own adventure
