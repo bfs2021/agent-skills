@@ -17,7 +17,27 @@ Invoke this skill automatically whenever:
 
 Do NOT wait for the user to ask. Run as part of the normal post-edit flow for any styling change.
 
-A `PostToolUse` hook (`~/.claude/hooks/ds-guard-trigger.py`, wired in `~/.claude/settings.json`) now fires deterministically on every styling-file edit and injects a reminder, so the trigger no longer depends on this description matching. Effort gating: at `high`/`xhigh`/`max` run the full audit against the token inventory and showcase (Steps 1+); at lower effort a quick spot-check of the diff's hardcoded values is enough.
+The trigger depends on this description matching. To make the reminder deterministic, you can add your own `PostToolUse` hook in `settings.json`; this repo does not ship one. The hook has to print JSON with `hookSpecificOutput.additionalContext`: plain text on stdout only shows in the transcript view and never reaches the model. It fires after every `Edit`, `Write`, or `MultiEdit`, not just styling edits, so the reminder still leaves it to the model to decide whether the edit touched styling. Minimal example:
+
+```json
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '{\"hookSpecificOutput\": {\"hookEventName\": \"PostToolUse\", \"additionalContext\": \"If this edit touched styling (.css, className, style=), run the ds-guard skill.\"}}'"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+Effort gating: at `high`/`xhigh`/`max` run the full audit against the token inventory and showcase (Steps 1+); at lower effort a quick spot-check of the diff's hardcoded values is enough.
 
 # DS Guard — Design System Enforcement
 
