@@ -1,8 +1,9 @@
 ---
 name: tdd-implement
 description: >
-  Implements a feature or fix test-first: write failing tests, make them pass with the least code,
-  then refactor. Tests track acceptance criteria, not implementation details. Trigger on:
+  Implements a feature or fix test-first: write the few failing tests that would catch a real
+  regression, make them pass with the least code, then refactor. Plans only essential tests,
+  never one per criterion by default. Trigger on:
   "implement with TDD", "write the tests first", "TDD workflow", "red-green-refactor".
 ---
 
@@ -25,15 +26,25 @@ find src/ -name "*.ts" -o -name "*.tsx" | xargs grep -l "[relevant term]" | head
 
 ## Step 2: Define the MVP test plan
 
-Write down 3-5 tests before touching implementation code. Each test should:
-- Map directly to a specific acceptance criterion
-- Test user-observable behavior, not internal implementation
-- Answer: "Would a user notice if this broke?"
+Plan the fewest tests that would catch this change breaking: one per distinct behavior the change adds or alters, so a fix plus its new error path is two. Usually that's one or two; more than three needs a reason you can name. A bug fix always gets the regression test that would have caught the bug. Zero is valid only for a copy edit, a config tweak, or a one-line layout fix (see "Some fixes don't warrant a test at all" below). The repo's own test rules win where they're stricter.
+
+A test is essential only if both hold:
+- It fails when the behavior it covers is reverted. If it would pass on the old code, it tests nothing new.
+- It guards behavior a user or a caller would notice breaking. Name that breakage in one line; if you can't, cut the test.
+
+Plan per behavior, not per acceptance criterion. When one test covers three criteria, write one test. Put edge cases in only when the issue names them or the bug was one.
+
+Before writing any test, run the cut check on the plan: for each test, ask "if I delete this, what bug could ship?" No concrete answer means delete it from the plan.
 
 Tests to avoid:
 - "renders without crashing"
 - Prop-passing tests
-- Checking that a function was called (unless it's the actual requirement)
+- Checking that a function or mock was called (unless that call is the actual requirement)
+- Re-checking what the type system or a schema already enforces
+- Pinning a constant, a label, or copy text. A default or fallback that drives behavior is behavior, and a bug in one gets a regression test.
+- Several tests that run the same code path with trivially different inputs. Use one, or one table-driven test.
+- Testing the framework or a library instead of your code
+- Snapshot tests of whole outputs
 - Exhaustive edge cases not in the acceptance criteria
 - Tests that just re-assert a simple layout/visual fix — a `box-sizing`, padding, or margin tweak guards a value, not behavior, and only bloats the suite
 

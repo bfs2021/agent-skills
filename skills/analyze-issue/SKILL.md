@@ -92,14 +92,12 @@ found during discovery. Explain key decisions — why this approach over alterna
 
 ## MVP test plan
 
-Write 3-5 tests that map directly to acceptance criteria. No "renders without crashing."
+List only the essential tests: one per distinct behavior the change adds or alters, usually one or two, and none for a copy, config, or one-line layout fix. A bug fix always gets the regression test that would have caught the bug. Each test must fail if the behavior it covers is reverted and must guard something a user or caller would notice breaking. Plan per behavior, not per criterion. Then cut: for each test, ask "if I delete this, what bug could ship?" No concrete answer means drop it. No "renders without crashing."
 
-1. [What you're testing] — validates [acceptance criterion]
-2. [What you're testing] — validates [acceptance criterion]
-3. [What you're testing] — validates [acceptance criterion]
+1. [What you're testing] — catches [the breakage a user or caller would notice]
 
 Not testing (save for later or explicitly out of scope):
-- [edge case not in acceptance criteria]
+- [edge case not in acceptance criteria, unless the bug itself is that edge case]
 - [exhaustive input validation]
 
 ## Files to modify
