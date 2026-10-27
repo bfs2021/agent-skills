@@ -120,13 +120,10 @@ One short summary: which issues were updated, which were closed, which were left
 ### 1. Pull all open issues
 
 ```bash
-gh issue list --state open --limit 100 --json number,title,labels,createdAt,body,milestone
+gh issue list --state open --limit 200 --json number,title,labels,createdAt,body,milestone
 ```
 
-If there are more than 100, paginate:
-```bash
-gh issue list --state open --limit 100 --json number,title,labels,createdAt,body,milestone --skip [N]
-```
+`gh issue list` has no offset flag, so read past 200 by raising `--limit`, not by paging.
 
 ### 2. Score each issue
 
