@@ -26,10 +26,10 @@ find src/ -name "*.ts" -o -name "*.tsx" | xargs grep -l "[relevant term]" | head
 
 ## Step 2: Define the MVP test plan
 
-Plan the fewest tests that would catch this change breaking. Usually that's one or two; more than three needs a reason you can name. There's no minimum, and zero is a valid plan (see below). The repo's own test rules win where they're stricter.
+Plan the fewest tests that would catch this change breaking: one per distinct behavior the change adds or alters, so a fix plus its new error path is two. Usually that's one or two; more than three needs a reason you can name. A bug fix always gets the regression test that would have caught the bug. Zero is valid only for a copy edit, a config tweak, or a one-line layout fix (see "Some fixes don't warrant a test at all" below). The repo's own test rules win where they're stricter.
 
 A test is essential only if both hold:
-- It fails when the change is reverted. If it would pass on the old code, it tests nothing new.
+- It fails when the behavior it covers is reverted. If it would pass on the old code, it tests nothing new.
 - It guards behavior a user or a caller would notice breaking. Name that breakage in one line; if you can't, cut the test.
 
 Plan per behavior, not per acceptance criterion. When one test covers three criteria, write one test. Put edge cases in only when the issue names them or the bug was one.
@@ -41,7 +41,7 @@ Tests to avoid:
 - Prop-passing tests
 - Checking that a function or mock was called (unless that call is the actual requirement)
 - Re-checking what the type system or a schema already enforces
-- Pinning a constant, a default value, a label, or copy text
+- Pinning a constant, a label, or copy text. A default or fallback that drives behavior is behavior, and a bug in one gets a regression test.
 - Several tests that run the same code path with trivially different inputs. Use one, or one table-driven test.
 - Testing the framework or a library instead of your code
 - Snapshot tests of whole outputs
