@@ -92,11 +92,9 @@ found during discovery. Explain key decisions — why this approach over alterna
 
 ## MVP test plan
 
-Write 3-5 tests that map directly to acceptance criteria. No "renders without crashing."
+List only the essential tests: usually one or two, and none for a copy, config, or one-line layout fix. Each one must fail if the change is reverted and must guard something a user or caller would notice breaking. Plan per behavior, not per criterion, and follow `tdd-implement`'s cut check. No "renders without crashing."
 
-1. [What you're testing] — validates [acceptance criterion]
-2. [What you're testing] — validates [acceptance criterion]
-3. [What you're testing] — validates [acceptance criterion]
+1. [What you're testing] — catches [the breakage a user or caller would notice]
 
 Not testing (save for later or explicitly out of scope):
 - [edge case not in acceptance criteria]
