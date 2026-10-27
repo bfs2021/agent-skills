@@ -17,7 +17,7 @@ It does **not** reinvent screenshotting. The crawl mechanics — `bdg` setup, ra
 
 - Everything `visual-crawl` needs (`bdg` installed, dev server running, route list).
 - `gh` authenticated for the target repo.
-- For the screenshot-markdown step: the `github-screenshot` skill / `generate-github-image-markdown.sh` helper (it produces SHA-pinned github.com `?raw=true` URLs that render in issues and PRs, private repos included).
+- For the screenshot-markdown step: the `github-screenshot` skill (it builds SHA-pinned github.com `?raw=true` URLs with plain `git`, so they render in issues and PRs, private repos included).
 
 ## Phase 1 — Crawl
 
@@ -45,8 +45,8 @@ For each Major+ finding, create an issue. Reuse the `gh issue create` pattern an
 Commit the evidence screenshot to `github-screenshots/<topic>/` before generating its URL (see the `github-screenshot` skill's directory convention) — the link only resolves once the commit holding the file is pushed. If the finding isn't tied to a fix branch (e.g. it's going straight into a roll-up issue with no PR), push it on its own small branch rather than reusing an unrelated one.
 
 ```bash
-# Get a renderable screenshot URL (see the github-screenshot skill)
-# generate-github-image-markdown.sh writes a SHA-pinned github.com ?raw=true link
+# Get a renderable screenshot URL (see the github-screenshot skill):
+# https://github.com/<owner>/<repo>/blob/<sha>/<path>?raw=true, pinned to the pushed commit
 gh issue create \
   --title "Visual: <page> @ <breakpoint> — <one-line symptom>" \
   --label "<existing-label>" \
@@ -57,7 +57,7 @@ gh issue create \
 
 ## Screenshot
 
-<image markdown from generate-github-image-markdown.sh>
+<image markdown built per the github-screenshot skill>
 
 ## Where to look
 
