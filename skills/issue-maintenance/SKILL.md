@@ -149,6 +149,13 @@ independent. A doc that says complexity and model-power are orthogonal means a `
 issue can legitimately be `model-power:frontier` — a one-file change that is a genuine design call
 with no clear right answer. Don't collapse the two axes into one size.
 
+When the doc names a top reasoning tier (`frontier`) but doesn't say what earns it, read it as any
+of: the cause is still unknown after a cheaper model's pass, or the bug lives in live model output
+rather than a code path; a design call other issues build on, with no clear right answer; a rule
+that has to hold across modules (procedural generation, physics control, save and state
+lifecycle); or security. Size alone doesn't earn it, and a human task such as a playtest carries no
+model tier at all, so flag one that does.
+
 **Infer per-family exemptions from the backlog itself before filling anything in.** Some families
 deliberately don't apply to some issue types. Count coverage per family, split by issue type —
 using the typing mechanism established in §2b, not an ad-hoc reading of whatever labels look
