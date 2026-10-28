@@ -13,9 +13,11 @@
 #   re-ran), plus commit statuses. No checks reported yet is pending, not a pass or a failure.
 # - Review: passes on either of two sources. Which reviewer a repo uses, and in what order, is the
 #   adapter's call, not this script's.
-#   - Codex: the summary marker comment exists and every row of its table says Completed. The bot
-#     reviews when a PR opens, is marked ready, or is asked to (@codex review), not on every
-#     push. A summary that's posted but not Completed means the review is still running, and that
+#   - Codex: the summary marker comment exists, every row of its table says Completed, and the sha
+#     it names is the head (prefix match, since the table can carry a short sha). The bot reviews
+#     when a PR opens, is marked ready, or is asked to (@codex review), not on every push, so a
+#     summary on an older sha is stale and doesn't pass, and neither does one that names no sha.
+#     A summary that's posted but not Completed means the review is still running, and that
 #     blocks even if the other source passes.
 #   - Orchestrator comment: the other-family review is a comment the orchestrator posts with
 #     post-review.sh, from the account gh is signed in as. The newest such comment naming the
@@ -190,9 +192,19 @@ else
   draft_out="no"
 fi
 
-codex_ok=0
+codex_ok=0 codex_why=""
 case "$summary" in
-  complete) codex_ok=1 ;;
+  complete)
+    case "$summary_sha" in
+      -) codex_why="codex summary names no sha" ;;
+      *)
+        case "$head_sha" in
+          "$summary_sha"*) codex_ok=1 ;;
+          *) codex_why="stale (codex reviewed ${summary_sha}, head is ${head_sha:0:10})" ;;
+        esac
+        ;;
+    esac
+    ;;
   running) review_blocked="codex review still running" ;;
 esac
 
@@ -217,7 +229,7 @@ elif [ "$codex_ok" -eq 1 ]; then
 elif [ "$comment_ok" -eq 1 ]; then
   review_out="comment on ${rev_sha} by ${rev_who}, 0 open"
 else
-  review_out="${comment_why:-not posted}"
+  review_out="${comment_why:-${codex_why:-not posted}}"
   ready=0
 fi
 
