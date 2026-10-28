@@ -218,10 +218,10 @@ Runs on each batch PR once CI is green on its head.
    `scripts/pr-ready.sh <pr>` does the mechanical part. It prints 6 lines (head sha, CI, draft,
    the review, unresolved bot findings with thread ids and outdated ones flagged, mergeable state)
    and exits 0 only when all of them pass. The review line passes on either source: the Codex
-   bot's summary with every row Completed, or the newest orchestrator-posted comment naming the
-   head with 0 open findings, from the account `gh` runs as. A posted summary that isn't Completed
-   yet blocks, since that review is still running. A stale comment (a push landed after it) or no
-   review at all fails.
+   bot's summary with every row Completed on the head sha, or the newest orchestrator-posted
+   comment naming the head with 0 open findings, from the account `gh` runs as. A posted summary
+   that isn't Completed yet blocks, since that review is still running. A stale summary or comment
+   (a push landed after it; the bot doesn't re-review on push) or no review at all fails.
 3. When the PR is green with no unanswered verified findings, check the merge policy.
    - **The orchestrator merges.** The policy names this kind of PR. Show each condition it lists
      with a tool result, merge pinned to the head you checked (`gh pr merge --match-head-commit
